@@ -1,6 +1,8 @@
 #include "allocators.hpp"
 
 #include <chrono>
+#include <iostream>
+#include <format>
 
 allocators::allocators(heap_manager& heap_manager_ref, size_t thread_count) : heap_manager_ref(heap_manager_ref), alloc_thread_pool(thread_count) {}
 
@@ -27,22 +29,25 @@ void allocators::simulate_alloc(size_t tls_count, size_t global_count, size_t re
 
     for(size_t i = 0; i < tls_count; ++i){
         auto tls = create_root<thread_local_stack>("t" + std::to_string(i), tls_map_capacity(mode));
-        enqueue_simulation("TLS", i, [this, tls, tls_scopes, tls_allocs] -> void {
-            simulate_tls_alloc(tls, tls_scopes, tls_allocs);
+        enqueue_simulation("TLS", i, [this, tls=std::move(tls), tls_scopes, tls_allocs, i] -> void {
+            simulate_tls_alloc(tls.get(), tls_scopes, tls_allocs);
+            heap_manager_ref.remove_root("t" + std::to_string(i));
         }, completion_latch);
     }
 
     for(size_t i = 0; i < global_count; ++i){
         auto global = create_root<global_root>("g" + std::to_string(i), nullptr);
-        enqueue_simulation("Global", i, [this, global, global_allocs] -> void {
-            simulate_global_alloc(global, global_allocs);
+        enqueue_simulation("Global", i, [this, global=std::move(global), global_allocs, i] -> void {
+            simulate_global_alloc(global.get(), global_allocs);
+            heap_manager_ref.remove_root("g" + std::to_string(i));
         }, completion_latch);
     }
 
     for(size_t i = 0; i < register_count; ++i){
         auto reg = create_root<register_root>("r" + std::to_string(i), nullptr);
-        enqueue_simulation("Register", i, [this, reg, reg_allocs] -> void {
-            simulate_register_alloc(reg, reg_allocs);
+        enqueue_simulation("Register", i, [this, reg=std::move(reg), reg_allocs, i] -> void {
+            simulate_register_alloc(reg.get(), reg_allocs);
+            heap_manager_ref.remove_root("r" + std::to_string(i));
         }, completion_latch);
     }
 

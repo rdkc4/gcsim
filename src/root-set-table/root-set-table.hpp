@@ -3,7 +3,6 @@
 
 #include <string>
 #include <cstddef>
-#include <memory>
 
 #include "../common/hash-map/hash-map.hpp"
 #include "../common/root-set/root-set-base.hpp"
@@ -15,7 +14,7 @@
 class root_set_table {
 private:
     /// hash map storing root sets by name.
-    hash_map<std::string, std::unique_ptr<root_set_base>> roots;
+    hash_map<std::string, root_set_base*> roots;
     
 public:
     /**
@@ -54,7 +53,7 @@ public:
      * @param root - instance of the root set entry.
      * @returns void
     */
-    void add_root(std::string key, std::unique_ptr<root_set_base> root);
+    void add_root(std::string key, root_set_base* root);
 
     /**
      * @brief removes root from the root set table.
@@ -81,13 +80,13 @@ public:
      * @brief getter for the root-set-table.
      * @returns reference to a root-set-table.
     */
-    hash_map<std::string, std::unique_ptr<root_set_base>>& get_roots() noexcept;
+    hash_map<std::string, root_set_base*>& get_roots() noexcept;
 
     /**
      * @brief getter for the root-set-table.
      * @returns const reference to a root-set-table.
     */
-    const hash_map<std::string, std::unique_ptr<root_set_base>>& get_roots() const noexcept;
+    const hash_map<std::string, root_set_base*>& get_roots() const noexcept;
 
     /**
      * @brief removes all roots from root set table.

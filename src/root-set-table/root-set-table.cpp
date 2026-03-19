@@ -2,8 +2,8 @@
 
 #include <utility>
 
-void root_set_table::add_root(std::string key, std::unique_ptr<root_set_base> root) {
-    roots.insert(std::move(key), std::move(root));
+void root_set_table::add_root(std::string key, root_set_base* root) {
+    roots.insert(std::move(key), root);
 }
 
 void root_set_table::remove_root(const std::string& key) {
@@ -12,19 +12,19 @@ void root_set_table::remove_root(const std::string& key) {
 
 root_set_base* root_set_table::get_root(const std::string& key) noexcept {
     auto* entry = roots.find(key);
-    return entry ? entry->get() : nullptr;
+    return entry ? *entry : nullptr;
 }
 
 const root_set_base* root_set_table::get_root(const std::string& key) const noexcept {
-    auto* entry = roots.find(key);
-    return entry ? entry->get() : nullptr;
+    const auto* entry = roots.find(key);
+    return entry ? *entry : nullptr;
 }
 
-hash_map<std::string, std::unique_ptr<root_set_base>>& root_set_table::get_roots() noexcept {
+hash_map<std::string, root_set_base*>& root_set_table::get_roots() noexcept {
     return roots;
 }
 
-const hash_map<std::string, std::unique_ptr<root_set_base>>& root_set_table::get_roots() const noexcept {
+const hash_map<std::string, root_set_base*>& root_set_table::get_roots() const noexcept {
     return roots;
 }
 

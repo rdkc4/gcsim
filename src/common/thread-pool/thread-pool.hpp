@@ -26,7 +26,7 @@ private:
     bool stop;
 
     /// queue of tasks.
-    queue<std::function<void()>> tasks;
+    queue<std::move_only_function<void()>> tasks;
 
     /// list of threads owned by thread pool.
     std::thread* threads;
@@ -63,7 +63,7 @@ public:
             if(stop){
                 throw std::runtime_error("Enqueue on stopped thread");
             }
-            tasks.push(std::forward<T>(f));
+            tasks.push(std::move_only_function<void()>(std::forward<T>(f)));
         }
 
         cv.notify_one();

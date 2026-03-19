@@ -1,14 +1,12 @@
 #ifndef ALLOCATORS_HPP
 #define ALLOCATORS_HPP
 
-#include <format>
 #include <memory>
 #include <string>
 #include <latch>
 #include <random>
 #include <utility>
 #include <concepts>
-#include <iostream>
 
 #include "../heap-manager/heap-manager.hpp"
 #include "../common/thread-pool/thread-pool.hpp"
@@ -114,13 +112,14 @@ private:
      * @param key - key of the root.
      * @param arguments - arguments for the construction.
      * @returns pointer to a root-set-table element. 
+     * @warning you must remove root from the heap manager's root table before it goes out of scope
     */
     template <typename root, typename... args>
     requires std::derived_from<root, root_set_base>
-    root* create_root(const std::string& key, args&&... arguments){
+    std::unique_ptr<root> create_root(const std::string& key, args&&... arguments){
         auto root_ptr = std::make_unique<root>(std::forward<args>(arguments)...);
-        heap_manager_ref.add_root(key, std::move(root_ptr));
-        return static_cast<root*>(heap_manager_ref.get_root(key));
+        heap_manager_ref.add_root(key, root_ptr.get());
+        return std::move(root_ptr);
     }
 
     /**
@@ -134,10 +133,7 @@ private:
     template <typename fn>
     void enqueue_simulation(const std::string& label, size_t index, fn&& simulate, std::latch& completion_latch){
         alloc_thread_pool.enqueue([label, index, simulate = std::forward<fn>(simulate), &completion_latch]{
-            std::cout << std::format("{} {} is allocating...\n", label, index);
             simulate();
-            std::cout << std::format("{} {} finished\n", label, index);
-            
             completion_latch.count_down();
         });
     }

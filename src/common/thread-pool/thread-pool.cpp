@@ -45,7 +45,7 @@ thread_pool::~thread_pool() {
 
 void thread_pool::worker() {
     while (true) {
-        std::function<void()> task;
+        std::move_only_function<void()> task;
         {
             std::unique_lock<std::mutex> lock(mtx);
             cv.wait(lock, [this] {

@@ -63,9 +63,9 @@ header* heap_manager::allocate(uint32_t bytes){
     return nullptr;
 }
 
-void heap_manager::add_root(std::string key, std::unique_ptr<root_set_base> base){
+void heap_manager::add_root(std::string key, root_set_base* base){
     std::lock_guard<std::mutex> root_set_lock(root_set_mutex);
-    root_set.add_root(std::move(key), std::move(base));
+    root_set.add_root(std::move(key), base);
 }
 
 root_set_base* heap_manager::get_root(const std::string& key) {

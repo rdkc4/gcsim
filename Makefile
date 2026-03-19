@@ -5,13 +5,13 @@ CXXFLAGS = -std=c++23 -g -O1 -pthread \
            -fno-optimize-sibling-calls \
            -D_GLIBCXX_ASSERTIONS
 
-PERFCXXFLAGS = -std=c++23 -g -O2 -fno-omit-frame-pointer -DNDEBUG
+PERFCXXFLAGS = -std=c++23 -g -O2 -fno-omit-frame-pointer -DNDEBUG -pthread
 
-BENCHMARKCXXFLAGS = -std=c++23 -O3 -DNDEBUG
+BENCHMARKCXXFLAGS = -std=c++23 -O3 -DNDEBUG -pthread
 
 SANITIZERS = -fsanitize=address,undefined
 
-SRC = main.cpp \
+SRCS = main.cpp \
 	src/common/header/header.cpp \
 	src/common/segment/segment-info.cpp \
 	src/common/segment/segment.cpp \
@@ -26,24 +26,34 @@ SRC = main.cpp \
 	src/heap-manager/heap-manager.cpp \
 	src/allocators/allocators.cpp
 
-OBJ = $(SRC:.cpp=.o)
+OBJS = $(SRCS:.cpp=.o)
 EXEC = gcsim
 
-$(EXEC): $(OBJ)
-	$(CXX) $(SANITIZERS) -o $(EXEC) $(OBJ)
+.PHONY: all clean distclean perf benchmark run
+
+all: $(EXEC)
+
+$(EXEC): $(OBJS)
+	$(CXX) $(OBJS) -o $@ $(SANITIZERS)
 
 %.o: %.cpp
-	$(CXX) -c $(CXXFLAGS) $(SANITIZERS) $< -o $@
+	$(CXX) $(CXXFLAGS) $(SANITIZERS) -MMD -MP -c $< -o $@
+
+run: $(EXEC)
+	./$(EXEC)
 
 perf: CXXFLAGS := $(PERFCXXFLAGS)
 perf: SANITIZERS :=
-perf: clean
-perf: $(EXEC)
+perf: clean $(EXEC)
 
 benchmark: CXXFLAGS := $(BENCHMARKCXXFLAGS)
 benchmark: SANITIZERS :=
-benchmark: clean
-benchmark: $(EXEC)
+benchmark: clean $(EXEC)
 
 clean:
-	rm -f $(OBJ) $(EXEC)
+	rm -f $(OBJS) $(EXEC)
+
+distclean:
+	rm -f $(OBJS:.o=.d)
+
+-include $(OBJS:.o=.d)

@@ -3,7 +3,6 @@
 
 #include <cstdint>
 #include <atomic>
-#include <memory>
 #include <mutex>
 #include <chrono>
 #include <stop_token>
@@ -164,7 +163,7 @@ public:
      * @param key - name of the root.
      * @param base - element of the root-set-table.
     */
-    void add_root(std::string key, std::unique_ptr<root_set_base> base);
+    void add_root(std::string key, root_set_base* base);
 
     /**
      * @brief getter for the root from the root-set-table.
