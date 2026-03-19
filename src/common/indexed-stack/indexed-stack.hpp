@@ -8,8 +8,7 @@
 #include <utility>
 #include <type_traits>
 
-/// initial stack capacity.
-constexpr size_t DEFAULT_STACK_CAPACITY = 8;
+#include "../cfg/structs-cfg.hpp"
 
 /**
  * @class indexed_stack
@@ -45,7 +44,7 @@ private:
      * @throws std::invalid_argument if new_capacity is below DEFAULT_STACK_CAPACITY
     */
     void resize(size_t new_capacity) {
-        if(new_capacity < DEFAULT_STACK_CAPACITY){
+        if(new_capacity < cfg::structs::indexed_stack::DEFAULT_STACK_CAPACITY){
             throw std::invalid_argument("Invalid capacity");
         }
         T* new_data = static_cast<T*>(::operator new(sizeof(T) * new_capacity));
@@ -77,9 +76,9 @@ public:
      * @details preallocates the memory for DEFAULT_STACK_CAPACITY elements; default size 0.
     */
     indexed_stack() : 
-        data(static_cast<T*>(::operator new(sizeof(T) * DEFAULT_STACK_CAPACITY))), 
+        data(static_cast<T*>(::operator new(sizeof(T) * cfg::structs::indexed_stack::DEFAULT_STACK_CAPACITY))), 
         size(0),
-        capacity(DEFAULT_STACK_CAPACITY) {}
+        capacity(cfg::structs::indexed_stack::DEFAULT_STACK_CAPACITY) {}
 
     /** 
      * @brief destroys the indexed_stack object.
@@ -153,7 +152,7 @@ public:
         }
         data[--size].~T();
 
-        if(size <= capacity >> 2 && capacity >> 1 >= DEFAULT_STACK_CAPACITY){
+        if(size <= capacity >> 2 && capacity >> 1 >= cfg::structs::indexed_stack::DEFAULT_STACK_CAPACITY){
             resize(capacity >> 1);
         }
     }

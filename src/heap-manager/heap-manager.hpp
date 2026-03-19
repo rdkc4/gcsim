@@ -29,7 +29,7 @@ constexpr uint32_t LARGE_OBJECT_THRESHOLD = 256 * 1024;
 class heap_manager {
 private:
     /// locks for heap segments.
-    std::mutex segment_locks[TOTAL_SEGMENTS];
+    std::mutex segment_locks[cfg::heap::TOTAL_SEGMENTS];
 
     /// locks the root-set-table.
     std::mutex root_set_mutex;
@@ -53,13 +53,17 @@ private:
     std::atomic<bool> gc_in_progress{false};
 
     /// small object segment that was used last, default to last.
-    std::atomic<size_t> last_small_segment{SMALL_OBJECT_SEGMENTS - 1};
+    std::atomic<size_t> last_small_segment{cfg::heap::SMALL_OBJECT_SEGMENTS - 1};
 
     /// medium object segment that was used last, default to last.
-    std::atomic<size_t> last_medium_segment{SMALL_OBJECT_SEGMENTS + MEDIUM_OBJECT_SEGMENTS - 1};
+    std::atomic<size_t> last_medium_segment{
+        cfg::heap::SMALL_OBJECT_SEGMENTS + cfg::heap::MEDIUM_OBJECT_SEGMENTS - 1
+    };
 
     /// large object segment that was used last, default to last.
-    std::atomic<size_t> last_large_segment{SMALL_OBJECT_SEGMENTS + MEDIUM_OBJECT_SEGMENTS + LARGE_OBJECT_SEGMENTS - 1};
+    std::atomic<size_t> last_large_segment{
+        cfg::heap::SMALL_OBJECT_SEGMENTS + cfg::heap::MEDIUM_OBJECT_SEGMENTS + cfg::heap::LARGE_OBJECT_SEGMENTS - 1
+    };
     
     /// last time garbage collection was done.
     std::atomic<uint64_t> last_gc_time_ms;

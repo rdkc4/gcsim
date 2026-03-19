@@ -126,13 +126,12 @@ private:
      * @brief adds simulation to queue.
      * @tparam fn - type of the function.
      * @param label - name of caller.
-     * @param index - index of the caller.
      * @param simulate - simulation function.
      * @param completion_latch - synchronization for simulation.
     */
     template <typename fn>
-    void enqueue_simulation(const std::string& label, size_t index, fn&& simulate, std::latch& completion_latch){
-        alloc_thread_pool.enqueue([label, index, simulate = std::forward<fn>(simulate), &completion_latch]{
+    void enqueue_simulation(const std::string& label, fn&& simulate, std::latch& completion_latch){
+        alloc_thread_pool.enqueue([label, simulate = std::forward<fn>(simulate), &completion_latch]{
             simulate();
             completion_latch.count_down();
         });

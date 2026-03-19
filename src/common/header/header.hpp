@@ -4,12 +4,6 @@
 #include <cstdint>
 #include <atomic>
 
-/// is_free flag is on the lowest bit.
-constexpr uint8_t IS_FREE = 0x01;
-
-/// is marked flag is on the second lowest bit.
-constexpr uint8_t IS_MARKED = 0x02;
-
 /**
  * @struct header
  * @brief header of the block inside of the heap segment.

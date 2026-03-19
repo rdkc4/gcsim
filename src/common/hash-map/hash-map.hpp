@@ -8,12 +8,7 @@
 #include <type_traits>
 
 #include "hash-map-entry.hpp"
-
-/// initial number of buckets.
-constexpr size_t DEFAULT_MAP_CAPACITY = 8;
-
-/// load factor for resizing.
-constexpr double MAX_LOAD_FACTOR = 0.75;
+#include "../cfg/structs-cfg.hpp"
 
 /**
  * @class hash_map
@@ -117,9 +112,9 @@ public:
      * sets each bucket linked list to nullptr.
     */
     hash_map() :
-        buckets(static_cast<map_entry**>(::operator new (sizeof(map_entry*) * DEFAULT_MAP_CAPACITY))),
+        buckets(static_cast<map_entry**>(::operator new (sizeof(map_entry*) * cfg::structs::hash_map::DEFAULT_MAP_CAPACITY))),
         size(0),
-        capacity(DEFAULT_MAP_CAPACITY) {
+        capacity(cfg::structs::hash_map::DEFAULT_MAP_CAPACITY) {
             
         for(size_t i = 0; i < capacity; ++i){
             buckets[i] = nullptr;
@@ -215,7 +210,7 @@ public:
         buckets[bucket_idx] = new_entry;
         ++size;
 
-        if(load_factor() > MAX_LOAD_FACTOR){
+        if(load_factor() > cfg::structs::hash_map::MAX_LOAD_FACTOR){
             resize();
         }
     }

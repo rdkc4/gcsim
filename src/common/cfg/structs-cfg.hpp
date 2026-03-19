@@ -1,0 +1,35 @@
+#ifndef STRUCTS_CFG_HPP
+#define STRUCTS_CFG_HPP
+
+#include <cstddef>
+
+/**
+ * @namespace cfg::structs
+ * @brief module defining constants related to data structures.
+*/
+namespace cfg::structs {
+
+    /**
+     * @namespace cfg::structs::hmap
+     * @brief module defining constants related to hash map.
+    */
+    namespace hash_map {
+        /// default number of buckets in a hash map.
+        constexpr size_t DEFAULT_MAP_CAPACITY = 8;
+
+        /// max load factor for resizing of the hash map.
+        constexpr double MAX_LOAD_FACTOR = 0.75;
+    };
+
+    /**
+     * @namespace cfg::structs::idx_stack
+     * @brief module defining constants related to hash map.
+    */
+    namespace indexed_stack {
+        /// default capacity of the indexed stack.
+        constexpr size_t DEFAULT_STACK_CAPACITY = 8;
+    };
+
+};
+
+#endif

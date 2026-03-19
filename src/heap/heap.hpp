@@ -4,18 +4,7 @@
 #include <cstddef>
 
 #include "../common/segment/segment.hpp"
-
-/// number of small object segments.
-constexpr size_t SMALL_OBJECT_SEGMENTS = 4;
-
-/// number of medium object segments.
-constexpr size_t MEDIUM_OBJECT_SEGMENTS = 2;
-
-/// number of large object segments.
-constexpr size_t LARGE_OBJECT_SEGMENTS = 2;
-
-/// total number of segments.
-constexpr size_t TOTAL_SEGMENTS = SMALL_OBJECT_SEGMENTS + MEDIUM_OBJECT_SEGMENTS + LARGE_OBJECT_SEGMENTS;
+#include "../common/cfg/heap-cfg.hpp"
 
 /**
  * @class heap
@@ -24,13 +13,13 @@ constexpr size_t TOTAL_SEGMENTS = SMALL_OBJECT_SEGMENTS + MEDIUM_OBJECT_SEGMENTS
 class heap {
 private:
     /// segments for small object allocation.
-    segment small_object_segments[SMALL_OBJECT_SEGMENTS];
+    segment small_object_segments[cfg::heap::SMALL_OBJECT_SEGMENTS];
     
     /// segments for medium object allocation.
-    segment medium_object_segments[MEDIUM_OBJECT_SEGMENTS];
+    segment medium_object_segments[cfg::heap::MEDIUM_OBJECT_SEGMENTS];
     
     /// segments for large object allocation.
-    segment large_object_segments[LARGE_OBJECT_SEGMENTS];
+    segment large_object_segments[cfg::heap::LARGE_OBJECT_SEGMENTS];
 
 public:
     /**

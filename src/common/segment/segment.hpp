@@ -3,9 +3,6 @@
 
 #include <cstdint>
 
-// size of a single segment in bytes
-constexpr uint32_t SEGMENT_SIZE = 16 * 1024 * 1024;
-
 /**
  * @struct segment
  * @brief represents a single segment on the heap.
@@ -19,7 +16,7 @@ struct segment {
 
     /**
      * @brief creates an instance of the segment.
-     * @details allocates SEGMENT_SIZE bytes of memory.
+     * @details allocates cfg::heap::SEGMENT_SIZE bytes of memory.
      * @throws std::bad_alloc when memory allocation fails.
      */
     segment();

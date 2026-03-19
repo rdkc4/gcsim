@@ -2,6 +2,8 @@
 
 #include <latch>
 
+#include "../common/cfg/heap-cfg.hpp"
+
 garbage_collector::garbage_collector(size_t thread_count) : gc_thread_pool(thread_count) {}
 
 void garbage_collector::collect(root_set_table& root_set, heap& heap_memory) noexcept {
@@ -59,7 +61,7 @@ void garbage_collector::mark(root_set_table& root_set) noexcept {
 
 void garbage_collector::sweep_segment(segment& seg) noexcept {
     uint8_t* ptr = seg.segment_memory;
-    const uint8_t* endptr = seg.segment_memory + SEGMENT_SIZE;
+    const uint8_t* endptr = seg.segment_memory + cfg::heap::SEGMENT_SIZE;
     
     while(ptr + sizeof(header) <= endptr) {
         header* hdr = reinterpret_cast<header*>(ptr);
@@ -76,9 +78,9 @@ void garbage_collector::sweep_segment(segment& seg) noexcept {
 }
 
 void garbage_collector::sweep(heap& heap_memory) noexcept {
-    if constexpr (TOTAL_SEGMENTS == 0) return;
+    if constexpr (cfg::heap::TOTAL_SEGMENTS == 0) return;
     
-    std::latch completion_latch(TOTAL_SEGMENTS);
+    std::latch completion_latch(cfg::heap::TOTAL_SEGMENTS);
 
     auto enqueue_segment_sweep = [&](segment& segment) -> void {
         gc_thread_pool.enqueue([&, seg = &segment] -> void {
@@ -87,15 +89,15 @@ void garbage_collector::sweep(heap& heap_memory) noexcept {
         });
     };
 
-    for(size_t i = 0; i < SMALL_OBJECT_SEGMENTS; ++i) {
+    for(size_t i = 0; i < cfg::heap::SMALL_OBJECT_SEGMENTS; ++i) {
         enqueue_segment_sweep(heap_memory.get_small_object_segment(i));
     }
 
-    for(size_t i = 0; i < MEDIUM_OBJECT_SEGMENTS; ++i) {
+    for(size_t i = 0; i < cfg::heap::MEDIUM_OBJECT_SEGMENTS; ++i) {
         enqueue_segment_sweep(heap_memory.get_medium_object_segment(i));
     }
 
-    for(size_t i = 0; i < LARGE_OBJECT_SEGMENTS; ++i) {
+    for(size_t i = 0; i < cfg::heap::LARGE_OBJECT_SEGMENTS; ++i) {
         enqueue_segment_sweep(heap_memory.get_large_object_segment(i));
     }
 
