@@ -16,6 +16,7 @@ SRCS = main.cpp \
 	src/common/segment/segment-info.cpp \
 	src/common/segment/segment.cpp \
 	src/common/thread-pool/thread-pool.cpp \
+	src/common/rng/rng-sim.cpp \
 	src/heap/heap.cpp \
 	src/root-set-table/global-root.cpp \
 	src/root-set-table/register-root.cpp \

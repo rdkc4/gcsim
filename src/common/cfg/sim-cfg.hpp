@@ -32,6 +32,15 @@ namespace cfg::sim {
     /// capacity of the hash-map that maps tls variable to its index in relaxed mode.
     constexpr size_t TLS_MAP_CAPACITY_RELAXED = TLS_ALLOC_RELAXED_THRESHOLD_PER_SCOPE << 1;
 
+    /// probability of the object to be in small object category.
+    constexpr int SMALL_OBJECT_CATEGORY_THRESHOLD = 90; //<90%
+
+    /// probability of the object to be in medium object category.
+    constexpr int MEDIUM_OBJECT_CATEGORY_THRESHOLD = 98; //<8%
+
+    /// probability of the object to be in large object category.
+    constexpr int LARGE_OBJECT_CATEGORY_THRESHOLD = 100; //<2%
+
 };
 
 #endif

@@ -8,7 +8,7 @@
  * @namespace cfg::heap_manager
  * @brief module defining constants related to heap manager.
 */
-namespace heap_manager {
+namespace cfg::heap_manager {
     /// max size of the small object.
     constexpr uint32_t SMALL_OBJECT_THRESHOLD = 256; //<256B
 
@@ -29,6 +29,7 @@ namespace heap_manager {
 
     /// periodic interval of the gc calls.
     constexpr std::chrono::milliseconds PERIODIC_GC_INTERVAL{PERIODIC_INTERVAL};
+
 };
 
 #endif
