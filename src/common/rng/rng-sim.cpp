@@ -1,5 +1,6 @@
 #include "rng-sim.hpp"
 
+#include <cassert>
 #include <random>
 #include <thread>
 
@@ -9,11 +10,20 @@ namespace rng::sim {
     
     /// random number generator.
     thread_local std::mt19937 random_number_generator {
-        std::random_device{}() + std::hash<std::thread::id>{}(std::this_thread::get_id())
+        []{
+            std::random_device rd;
+            std::seed_seq seq {
+                rd(),
+                rd(),
+                static_cast<unsigned>(std::hash<std::thread::id>{}(std::this_thread::get_id()))
+            };
+
+            return std::mt19937(seq);
+        }()
     };
 
     /// distribution for object size category.
-    thread_local std::uniform_int_distribution<int> object_category_distribution {
+    thread_local std::uniform_int_distribution<uint32_t> object_category_distribution {
         MIN_OBJECT_DISTRIBUTION,
         MAX_OBJECT_DISTRIBUTION
     };
@@ -37,14 +47,29 @@ namespace rng::sim {
     };
 
     uint32_t generate_object_size(){
-        int category = rng::sim::object_category_distribution(rng::sim::random_number_generator);
+        uint32_t category = object_category_distribution(random_number_generator);
 
         if (category <= cfg::sim::SMALL_OBJECT_CATEGORY_THRESHOLD) {
-            return rng::sim::small_object_distribution(rng::sim::random_number_generator);
+            return small_object_distribution(random_number_generator);
         } else if (category <= cfg::sim::MEDIUM_OBJECT_CATEGORY_THRESHOLD) {
-            return rng::sim::medium_object_distribution(rng::sim::random_number_generator);
+            return medium_object_distribution(random_number_generator);
         } else {
-            return rng::sim::large_object_distribution(rng::sim::random_number_generator);
+            return large_object_distribution(random_number_generator);
         }
     }
+
+    namespace shared_space {
+        /// distribution of indexes of the shared spaces
+        thread_local std::uniform_int_distribution<size_t> index_distribution;
+
+        size_t generate_index(size_t n){
+            assert(n > 0);
+
+            return index_distribution(
+                random_number_generator, 
+                decltype(index_distribution)::param_type(0, n - 1)
+            );
+        }
+
+    };
 };

@@ -40,6 +40,19 @@ namespace rng::sim {
     */
     uint32_t generate_object_size();
 
+    /**
+     * @namespace rng::sim::shared_space
+     * @brief module defining random number generation for shared spaces.
+    */
+    namespace shared_space {
+        /**
+         * @brief generates the random index of the shared_space.
+         * @returns index of the shared space.
+         * @warning n is greater than 0 (n > 0).
+        */
+        size_t generate_index(size_t n);
+    };
+
 };
 
 #endif

@@ -2,6 +2,7 @@
 #define REGISTER_ROOT_HPP
 
 #include <mutex>
+#include <cstdint>
 
 #include "../common/header/header.hpp"
 #include "../common/root-set/root-set-base.hpp"
@@ -16,9 +17,13 @@ class register_root final : public root_set_base {
 private:
     /// used for register synchronization.
     mutable std::mutex register_mutex;
+    
+    /// id of the register.
+    const uint64_t register_id;
 
     /// pointer to a header of the register variable on the heap.
     header* register_variable;
+
 
     /**
      * @brief getter for the variable.
@@ -32,15 +37,21 @@ private:
 
 public:
     /**
-     * @brief creates the instance of the register variable
+     * @brief creates the instance of the register variable.
+     * @param reg_id - id of the register.
      * @param var_ptr - pointer to a header of the register variable on the heap.
     */
-    register_root(header* var_ptr);
+    register_root(uint64_t reg_id, header* var_ptr);
+
+    /**
+     * @brief getter for the register id.
+     * @returns id of the register.
+    */
+    uint64_t get_register_id() const noexcept;
 
     /**
      * @brief setter for the register variable
      * @param var_ptr - pointer to a header of the variable on the heap.
-     * @returns void
     */
     void set_register_variable(header* var_ptr) noexcept;
 

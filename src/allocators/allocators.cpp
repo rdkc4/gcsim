@@ -1,12 +1,15 @@
 #include "allocators.hpp"
 
 #include <chrono>
+#include <cstdint>
 #include <iostream>
 #include <format>
 
 #include "../common/rng/rng-sim.hpp"
+#include "../common/core/identity/identity.hpp"
 
-allocators::allocators(heap_manager& heap_manager_ref, size_t thread_count) : heap_manager_ref(heap_manager_ref), alloc_thread_pool(thread_count) {}
+allocators::allocators(heap_manager& heap_manager_ref, size_t thread_count) 
+    : heap_manager_ref(heap_manager_ref), alloc_thread_pool(thread_count) {}
 
 void allocators::simulate_alloc(size_t tls_count, size_t global_count, size_t register_count, simulation_mode mode){
     std::cout << std::format("Initializing {} simulation\n", simulation_mode_name(mode));
@@ -20,26 +23,29 @@ void allocators::simulate_alloc(size_t tls_count, size_t global_count, size_t re
     const size_t reg_allocs = register_alloc_count(mode);
 
     for(size_t i = 0; i < tls_count; ++i){
-        auto tls = create_root<thread_local_stack>("t" + std::to_string(i), tls_map_capacity(mode));
-        enqueue_simulation("TLS", [this, tls=std::move(tls), tls_scopes, tls_allocs, i] -> void {
+        uint64_t id = core::identity::generate_identity(core::identity::type::thread_local_t);
+        auto tls = create_root<thread_local_stack>(id, tls_map_capacity(mode));
+        enqueue_simulation([this, tls=std::move(tls), tls_scopes, tls_allocs, id] -> void {
             simulate_tls_alloc(tls.get(), tls_scopes, tls_allocs);
-            heap_manager_ref.remove_root("t" + std::to_string(i));
+            heap_manager_ref.remove_root(id);
         }, completion_latch);
     }
 
     for(size_t i = 0; i < global_count; ++i){
-        auto global = create_root<global_root>("g" + std::to_string(i), nullptr);
-        enqueue_simulation("Global", [this, global=std::move(global), global_allocs, i] -> void {
+        uint64_t id = core::identity::generate_identity(core::identity::type::global_t);
+        auto global = create_root<global_root>(id, id, nullptr);
+        enqueue_simulation([this, global=std::move(global), global_allocs, id] -> void {
             simulate_global_alloc(global.get(), global_allocs);
-            heap_manager_ref.remove_root("g" + std::to_string(i));
+            heap_manager_ref.remove_root(id);
         }, completion_latch);
     }
 
     for(size_t i = 0; i < register_count; ++i){
-        auto reg = create_root<register_root>("r" + std::to_string(i), nullptr);
-        enqueue_simulation("Register", [this, reg=std::move(reg), reg_allocs, i] -> void {
+        uint64_t id = core::identity::generate_identity(core::identity::type::register_t);
+        auto reg = create_root<register_root>(id, id, nullptr);
+        enqueue_simulation([this, reg=std::move(reg), reg_allocs, id] -> void {
             simulate_register_alloc(reg.get(), reg_allocs);
-            heap_manager_ref.remove_root("r" + std::to_string(i));
+            heap_manager_ref.remove_root(id);
         }, completion_latch);
     }
 
@@ -66,7 +72,10 @@ void allocators::simulate_tls_alloc(thread_local_stack* tls, size_t scope_count,
         tls->push_scope();
         for(size_t i = 0; i < allocs_per_scope; ++i){
             header* obj = heap_manager_ref.allocate(rng::sim::generate_object_size());
-            tls->init(std::to_string(scope) + "_" + std::to_string(i), obj);
+            tls->init(
+                core::identity::generate_variable_identity(), 
+                obj
+            );
         }
         tls->pop_scope();
     }

@@ -20,8 +20,10 @@ class indexed_stack {
 private:
     /// pointer to the bottom element of the stack.
     T* data;
+
     /// number of the elements on the stack.
     size_t size;
+    
     /// allocated space for the stack.
     size_t capacity;
 

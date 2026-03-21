@@ -1,8 +1,8 @@
 #ifndef THREAD_LOCAL_STACK_HPP
 #define THREAD_LOCAL_STACK_HPP
 
-#include <string>
 #include <mutex>
+#include <cstdint>
 
 #include "../common/indexed-stack/indexed-stack.hpp"
 #include "../common/hash-map/hash-map.hpp"
@@ -26,8 +26,8 @@ private:
     /// stack of initialized variables.
     indexed_stack<thread_local_stack_entry> thread_stack;
 
-    /// mapping the variable name to its index inside of the thread_stack.
-    hash_map<std::string, size_t> var_to_idx;
+    /// mapping the variable id to its index inside of the thread_stack.
+    hash_map<uint64_t, size_t> var_to_idx;
 
     /**
      * @brief getter for the thread_stack.
@@ -81,26 +81,26 @@ public:
 
     /**
      * @brief initializes new variable.
-     * @param variable_name - name of the variable.
+     * @param variable_id - id of the variable.
      * @param heap_ptr - pointer to the value of the variable on the heap.
      * @throws std::invalid_argument when variable already exists.
     */
-    void init(std::string variable_name, header* heap_ptr = nullptr);
+    void init(uint64_t variable_id, header* heap_ptr = nullptr);
 
     /**
      * @brief assigns new value to a variable.
-     * @param variable_name - name of the variable.
+     * @param variable_id - id of the variable.
      * @param new_ref_to - pointer to a new value on the heap.
-     * @throws std::invalid_argument when variable_name is not previously initialized.
+     * @throws std::invalid_argument when variable_id is not previously initialized.
     */
-    void reassign_ref(const std::string& variable_name, header* new_ref_to);
+    void reassign_ref(uint64_t variable_id, header* new_ref_to);
 
     /**
      * @brief removes the reference to a value on the heap.
-     * @param variable_name - name of the variable.
-     * @throws std::invalid_argument when variable_name is not previously initialized.
+     * @param variable_id - id of the variable.
+     * @throws std::invalid_argument when variable_id is not previously initialized.
     */
-    void remove_ref(const std::string& variable_name);
+    void remove_ref(uint64_t variable_id);
 
     /**
      * @brief simulates entering new scope.

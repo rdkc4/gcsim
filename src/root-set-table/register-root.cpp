@@ -2,7 +2,12 @@
 
 #include <mutex>
 
-register_root::register_root(header* var_ptr) : register_variable{ var_ptr } {}
+register_root::register_root(uint64_t reg_id, header* var_ptr) 
+    : register_id{ reg_id }, register_variable{ var_ptr } {}
+
+uint64_t register_root::get_register_id() const noexcept {
+    return register_id;
+}
 
 void register_root::set_register_variable(header* var_ptr) noexcept {
     std::lock_guard<std::mutex> register_lock(register_mutex);

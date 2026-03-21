@@ -2,6 +2,7 @@
 #define GLOBAL_ROOT_HPP
 
 #include <mutex>
+#include <cstdint>
 
 #include "../common/header/header.hpp"
 #include "../common/root-set/root-set-base.hpp"
@@ -17,7 +18,10 @@ private:
     /// used for global variable synchronization.
     mutable std::mutex global_mutex;
 
-    /// pointer to a header of the variable on the heap
+    /// id of the global variable.
+    const uint64_t global_id;
+
+    /// pointer to a header of the variable on the heap.
     header* global_variable_ptr;
 
     /**
@@ -32,14 +36,20 @@ private:
 
 public:
     /**
-     * @brief creates the instance of the global variable
-     * @param var_ptr - pointer to a header of the global variable on the heap
+     * @brief creates the instance of the global variable.
+     * @param id - id of the global variable.
+     * @param var_ptr - pointer to a header of the global variable on the heap.
     */
-    global_root(header* var_ptr);
+    global_root(uint64_t id, header* var_ptr);
+
+    /**
+     * @brief getter for the id of the global variable.
+    */
+    uint64_t get_global_id() const noexcept;
 
     /**
      * @brief setter for the global variable.
-     * @param var_ptr - pointer to the header of the global variable on the heap
+     * @param var_ptr - pointer to the header of the global variable on the heap.
     */
     void set_global_variable(header* var_ptr) noexcept;
     

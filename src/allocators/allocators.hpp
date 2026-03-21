@@ -2,7 +2,6 @@
 #define ALLOCATORS_HPP
 
 #include <memory>
-#include <string>
 #include <latch>
 #include <utility>
 #include <concepts>
@@ -93,29 +92,28 @@ private:
      * @brief creates the root for root-set-table.
      * @tparam root - type of the root.
      * @tparam ...args - types of arguments for root construction.
-     * @param key - key of the root.
+     * @param id - id of the root.
      * @param arguments - arguments for the construction.
      * @returns pointer to a root-set-table element. 
      * @warning you must remove root from the heap manager's root table before it goes out of scope
     */
     template <typename root, typename... args>
     requires std::derived_from<root, root_set_base>
-    std::unique_ptr<root> create_root(const std::string& key, args&&... arguments){
+    std::unique_ptr<root> create_root(uint64_t id, args&&... arguments){
         auto root_ptr = std::make_unique<root>(std::forward<args>(arguments)...);
-        heap_manager_ref.add_root(key, root_ptr.get());
+        heap_manager_ref.add_root(id, root_ptr.get());
         return std::move(root_ptr);
     }
 
     /**
      * @brief adds simulation to queue.
      * @tparam fn - type of the function.
-     * @param label - name of caller.
      * @param simulate - simulation function.
      * @param completion_latch - synchronization for simulation.
     */
     template <typename fn>
-    void enqueue_simulation(const std::string& label, fn&& simulate, std::latch& completion_latch){
-        alloc_thread_pool.enqueue([label, simulate = std::forward<fn>(simulate), &completion_latch]{
+    void enqueue_simulation(fn&& simulate, std::latch& completion_latch){
+        alloc_thread_pool.enqueue([simulate = std::forward<fn>(simulate), &completion_latch]{
             simulate();
             completion_latch.count_down();
         });

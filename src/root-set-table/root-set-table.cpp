@@ -2,29 +2,29 @@
 
 #include <utility>
 
-void root_set_table::add_root(std::string key, root_set_base* root) {
-    roots.insert(std::move(key), root);
+void root_set_table::add_root(uint64_t id, root_set_base* root) {
+    roots.insert(std::move(id), root);
 }
 
-void root_set_table::remove_root(const std::string& key) {
-    roots.erase(key);
+void root_set_table::remove_root(uint64_t id) {
+    roots.erase(id);
 }
 
-root_set_base* root_set_table::get_root(const std::string& key) noexcept {
-    auto* entry = roots.find(key);
+root_set_base* root_set_table::get_root(uint64_t id) noexcept {
+    auto* entry = roots.find(id);
     return entry ? *entry : nullptr;
 }
 
-const root_set_base* root_set_table::get_root(const std::string& key) const noexcept {
-    const auto* entry = roots.find(key);
+const root_set_base* root_set_table::get_root(uint64_t id) const noexcept {
+    const auto* entry = roots.find(id);
     return entry ? *entry : nullptr;
 }
 
-hash_map<std::string, root_set_base*>& root_set_table::get_roots() noexcept {
+hash_map<uint64_t, root_set_base*>& root_set_table::get_roots() noexcept {
     return roots;
 }
 
-const hash_map<std::string, root_set_base*>& root_set_table::get_roots() const noexcept {
+const hash_map<uint64_t, root_set_base*>& root_set_table::get_roots() const noexcept {
     return roots;
 }
 

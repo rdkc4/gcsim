@@ -4,7 +4,6 @@
 #include <cstdint>
 #include <atomic>
 #include <mutex>
-#include <chrono>
 #include <stop_token>
 #include <thread>
 
@@ -12,15 +11,6 @@
 #include "../segment-free-memory-table/segment-free-memory-table.hpp"
 #include "../root-set-table/root-set-table.hpp"
 #include "../garbage-collector/gc.hpp"
-
-/// maximum small object size in bytes (up to 256B).
-constexpr uint32_t SMALL_OBJECT_THRESHOLD = 256;
-
-/// maximum medium object size in bytes (up to 2KB).
-constexpr uint32_t MEDIUM_OBJECT_THRESHOLD = 2 * 1024;
-
-/// maximum large object size in bytes (up to 256KB).
-constexpr uint32_t LARGE_OBJECT_THRESHOLD = 256 * 1024;
 
 /**
  * @class heap_manager
@@ -67,12 +57,6 @@ private:
     
     /// last time garbage collection was done.
     std::atomic<uint64_t> last_gc_time_ms;
-
-    /// minimum time between GC runs.
-    static constexpr std::chrono::milliseconds MIN_GC_INTERVAL{100};
-
-    /// periodic gc interval.
-    static constexpr std::chrono::seconds PERIODIC_GC_INTERVAL{1};
 
     /// background gc thread.
     std::jthread gc_timer_thread;
@@ -164,23 +148,23 @@ public:
 
     /**
      * @brief adds new root to a root-set-table.
-     * @param key - name of the root.
+     * @param id - id of the root.
      * @param base - element of the root-set-table.
     */
-    void add_root(std::string key, root_set_base* base);
+    void add_root(uint64_t id, root_set_base* base);
 
     /**
      * @brief getter for the root from the root-set-table.
-     * @param key - name of the root.
+     * @param id - id of the root.
      * @returns pointer to a root.
     */
-    root_set_base* get_root(const std::string& key);
+    root_set_base* get_root(uint64_t id);
 
     /**
      * @brief removes root from the root-set-table.
-     * @param key - const reference to a name of the root-set-table.
+     * @param id - id of the root-set-table.
     */
-    void remove_root(const std::string& key);
+    void remove_root(uint64_t id);
 
     /**
      * @brief removes all roots from the root-set-table.

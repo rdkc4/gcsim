@@ -41,6 +41,9 @@ namespace cfg::sim {
     /// probability of the object to be in large object category.
     constexpr int LARGE_OBJECT_CATEGORY_THRESHOLD = 100; //<2%
 
+    /// number of available registers.
+    constexpr size_t REGISTER_COUNT = 10;
+
 };
 
 #endif

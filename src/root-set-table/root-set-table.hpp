@@ -1,8 +1,8 @@
 #ifndef ROOT_SET_TABLE_HPP
 #define ROOT_SET_TABLE_HPP
 
-#include <string>
 #include <cstddef>
+#include <cstdint>
 
 #include "../common/hash-map/hash-map.hpp"
 #include "../common/root-set/root-set-base.hpp"
@@ -13,8 +13,8 @@
 */
 class root_set_table {
 private:
-    /// hash map storing root sets by name.
-    hash_map<std::string, root_set_base*> roots;
+    /// hash map storing root sets by id.
+    hash_map<uint64_t, root_set_base*> roots;
     
 public:
     /**
@@ -49,44 +49,44 @@ public:
 
     /**
      * @brief adds new root to the root set table.
-     * @param key - name of the root.
+     * @param id - id of the root.
      * @param root - instance of the root set entry.
      * @returns void
     */
-    void add_root(std::string key, root_set_base* root);
+    void add_root(uint64_t id, root_set_base* root);
 
     /**
      * @brief removes root from the root set table.
-     * @param key - name of the root.
+     * @param id - id of the root.
      * @returns void
     */
-    void remove_root(const std::string& key);
+    void remove_root(uint64_t id);
 
     /**
      * @brief getter for the root from the root set table.
-     * @param key - name of the root.
+     * @param id - id of the root.
      * @returns pointer to a root set entry.
     */
-    root_set_base* get_root(const std::string& key) noexcept;
+    root_set_base* get_root(uint64_t id) noexcept;
 
     /**
      * @brief getter for the root from the root set table.
-     * @param key - name of the root.
+     * @param id - id of the root.
      * @returns const pointer to a root set entry.
     */
-    const root_set_base* get_root(const std::string& key) const noexcept;
+    const root_set_base* get_root(uint64_t id) const noexcept;
 
     /**
      * @brief getter for the root-set-table.
      * @returns reference to a root-set-table.
     */
-    hash_map<std::string, root_set_base*>& get_roots() noexcept;
+    hash_map<uint64_t, root_set_base*>& get_roots() noexcept;
 
     /**
      * @brief getter for the root-set-table.
      * @returns const reference to a root-set-table.
     */
-    const hash_map<std::string, root_set_base*>& get_roots() const noexcept;
+    const hash_map<uint64_t, root_set_base*>& get_roots() const noexcept;
 
     /**
      * @brief removes all roots from root set table.

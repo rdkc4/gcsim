@@ -4,6 +4,7 @@
 #include <latch>
 
 #include "../common/cfg/heap-cfg.hpp"
+#include "../common/cfg/heap-manager-cfg.hpp"
 
 heap_manager::heap_manager(size_t hm_thread_count, size_t gc_thread_count) 
     : heap_manager_thread_pool(hm_thread_count), 
@@ -80,19 +81,19 @@ header* heap_manager::allocate(uint32_t bytes){
     return nullptr;
 }
 
-void heap_manager::add_root(std::string key, root_set_base* base){
+void heap_manager::add_root(uint64_t id, root_set_base* base){
     std::lock_guard<std::mutex> root_set_lock(root_set_mutex);
-    root_set.add_root(std::move(key), base);
+    root_set.add_root(id, base);
 }
 
-root_set_base* heap_manager::get_root(const std::string& key) {
+root_set_base* heap_manager::get_root(uint64_t id) {
     std::lock_guard<std::mutex> root_set_lock(root_set_mutex);
-    return root_set.get_root(key);
+    return root_set.get_root(id);
 }
 
-void heap_manager::remove_root(const std::string& key){
+void heap_manager::remove_root(uint64_t id){
     std::lock_guard<std::mutex> root_set_lock(root_set_mutex);
-    root_set.remove_root(key);
+    root_set.remove_root(id);
 }
 
 void heap_manager::clear_roots() noexcept {
@@ -118,9 +119,11 @@ void heap_manager::collect_garbage(){
 }
 
 bool heap_manager::should_run_gc() const noexcept {
-    auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+    auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::high_resolution_clock::now().time_since_epoch()
+    ).count();
     auto last_ms = last_gc_time_ms.load(std::memory_order_acquire);
-    return (now_ms - last_ms) >= MIN_GC_INTERVAL.count();
+    return (now_ms - last_ms) >= cfg::heap_manager::MIN_GC_INTERVAL.count();
 }
 
 void heap_manager::periodic_gc_loop(std::stop_token stop_token){
@@ -131,7 +134,7 @@ void heap_manager::periodic_gc_loop(std::stop_token stop_token){
 
     while(!stop_token.stop_requested()){
         std::unique_lock<std::mutex> gc_lock(periodic_gc_mutex);
-        gc_cv.wait_for(gc_lock, PERIODIC_GC_INTERVAL);
+        gc_cv.wait_for(gc_lock, cfg::heap_manager::PERIODIC_GC_INTERVAL);
 
         if(stop_token.stop_requested()) break;
 
@@ -178,12 +181,12 @@ int heap_manager::find_suitable_segment(uint32_t bytes) noexcept {
     int fallback_segment_idx = -1;
     uint32_t fallback_segment_size = 0;
 
-    if(bytes <= SMALL_OBJECT_THRESHOLD){
+    if(bytes <= cfg::heap_manager::SMALL_OBJECT_THRESHOLD){
         start_idx = 0;
         end_idx = cfg::heap::SMALL_OBJECT_SEGMENTS;
         last_segment_idx = &last_small_segment;
     }
-    else if(bytes <= MEDIUM_OBJECT_THRESHOLD){
+    else if(bytes <= cfg::heap_manager::MEDIUM_OBJECT_THRESHOLD){
         start_idx = cfg::heap::SMALL_OBJECT_SEGMENTS;
         end_idx = cfg::heap::SMALL_OBJECT_SEGMENTS + cfg::heap::MEDIUM_OBJECT_SEGMENTS;
         last_segment_idx = &last_medium_segment;
@@ -250,7 +253,9 @@ header* heap_manager::allocate_from_segment(size_t segment_index, uint32_t bytes
 
     uint32_t remaining = current->size - bytes;
     if(remaining >= static_cast<uint32_t>(sizeof(header)) + 16){
-        header* new_header = reinterpret_cast<header*>(reinterpret_cast<uint8_t*>(current) + sizeof(header) + static_cast<size_t>(bytes));
+        header* new_header = reinterpret_cast<header*>(
+            reinterpret_cast<uint8_t*>(current) + sizeof(header) + static_cast<size_t>(bytes)
+        );
         
         new_header->size = remaining - static_cast<uint32_t>(sizeof(header));
         new_header->next = current->next;
