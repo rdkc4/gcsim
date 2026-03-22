@@ -11,7 +11,6 @@
 
 #include "../heap/heap.hpp"
 #include "../segment-free-memory-table/segment-free-memory-table.hpp"
-#include "../common/thread-pool/thread-pool.hpp"
 #include "../root-set-table/root-set-table.hpp"
 #include "../garbage-collector/garbage-collector.hpp"
 
@@ -39,9 +38,6 @@ private:
     /// gc for heap cleanup.
     std::unique_ptr<garbage_collector> gc;
 
-    /// thread pool for coalescing segments.
-    thread_pool heap_manager_thread_pool;
-
     /// indicates whether gc is currently running.
     std::atomic<bool> gc_in_progress{false};
 
@@ -59,7 +55,7 @@ private:
     };
     
     /// last time garbage collection was done.
-    std::atomic<uint64_t> last_gc_time_ms;
+    std::atomic<uint64_t> last_gc_time_ms{0};
 
     /// background gc thread.
     std::jthread gc_timer_thread;
@@ -77,20 +73,6 @@ private:
     void periodic_gc_loop(std::stop_token stop_token);
 
     /**
-     * @brief getter for the index of the segment based on object size category.
-     * @param segment_index - index of the segment 0 to (n-1).
-     * @returns index of the segment in an object category.
-    */
-    size_t get_segment_category_index(size_t segment_index) const noexcept;
-
-    /**
-     * @brief getter for the segment based on index.
-     * @param segment_index - index of the segment.
-     * @returns reference to a segment.
-    */
-    segment& get_segment(size_t segment_index);
-
-    /**
      * @brief finds a segment that can store required bytes.
      * @param bytes - number of bytes that need to be allocated.
      * @returns index of the segment if segment can allocate enough bytes, -1 otherwise.
@@ -106,38 +88,23 @@ private:
     header* allocate_from_segment(size_t segment_index, uint32_t bytes);
 
     /**
-     * @brief merges free blocks on the segment.
-     * @param segment_index - index of the segment. 
-    */
-    void coalesce_segment(size_t segment_index);
-
-    /**
-     * @brief merges free blocks of segments.
-     * @warning must be called during the STW, after gc finishes collecting.
-    */
-    void coalesce_segments();
-
-    /**
      * @brief initializes the free memory table.
-     * initializes the gc clock.
     */
-    void init();
+    void init_free_memory();
 
 public:
     /**
      * @brief creates the instance of the heap manager.
      * @tparam type of the gc 
      * @param gc_thread_count - size of gc thread pool, defaults to 1.
-     * @param hm_thread_count - size of heap manager's thread pool, defaults to 1
      * @details initializes the segments on the heap, initializes free memory tables.
     */
     template<typename GC>
     requires std::derived_from<GC, garbage_collector>
-    heap_manager(std::in_place_type_t<GC>, size_t gc_thread_count = 1, size_t hm_thread_count = 1)
+    heap_manager(std::in_place_type_t<GC>, size_t gc_thread_count = 1)
         : gc{ std::make_unique<GC>(gc_thread_count) },
-          heap_manager_thread_pool{ hm_thread_count },
           gc_timer_thread{ [this](std::stop_token st) -> void {periodic_gc_loop(st); } } 
-          { init(); }
+          { init_free_memory(); }
 
     /**
      * @brief deletes the instance of the heap manager.
@@ -169,13 +136,6 @@ public:
      * @param base - element of the root-set-table.
     */
     void add_root(uint64_t id, root_set_base* base);
-
-    /**
-     * @brief getter for the root from the root-set-table.
-     * @param id - id of the root.
-     * @returns pointer to a root.
-    */
-    root_set_base* get_root(uint64_t id);
 
     /**
      * @brief removes root from the root-set-table.

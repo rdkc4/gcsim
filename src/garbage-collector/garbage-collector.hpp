@@ -4,6 +4,7 @@
 #include "../common/gc/gc-visitor.hpp"
 #include "../common/thread-pool/thread-pool.hpp"
 #include "../root-set-table/root-set-table.hpp"
+#include "../segment-free-memory-table/segment-free-memory-table.hpp"
 #include "../heap/heap.hpp"
 
 class garbage_collector : public gc_visitor {
@@ -27,7 +28,7 @@ public:
      * @param root_set - reference to a root-set-table.
      * @param heap_memory - reference to a heap.
     */
-    virtual void collect(root_set_table& root_set, heap& heap_memory) noexcept = 0;
+    virtual void collect(root_set_table& root_set, heap& heap_memory, segment_free_memory_table& free_memory_table) noexcept = 0;
 };
 
 #endif

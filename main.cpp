@@ -10,8 +10,7 @@
 int main() {
     heap_manager heap_mng(
         std::in_place_type<ms_garbage_collector>,
-        cfg::threads::GC_THREAD_COUNT,
-        cfg::threads::HM_THREAD_COUNT 
+        cfg::threads::GC_THREAD_COUNT
     );
 
     constexpr size_t tls_count = 5;

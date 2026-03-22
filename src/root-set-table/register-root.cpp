@@ -19,6 +19,11 @@ void register_root::accept(gc_visitor& visitor) noexcept {
     visitor.visit(*this);
 }
 
-header* register_root::get_register_variable_unlocked() noexcept {
+void register_root::accept_forward(gc_forwarder& forwarder) noexcept {
+    std::lock_guard<std::mutex> register_lock(register_mutex);
+    forwarder.forward(*this);
+}
+
+header*& register_root::get_register_variable_unlocked() noexcept {
     return register_variable;
 }

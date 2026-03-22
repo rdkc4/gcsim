@@ -17,6 +17,11 @@ void global_root::accept(gc_visitor& visitor) noexcept {
     visitor.visit(*this);
 }
 
-header* global_root::get_global_variable_unlocked() noexcept {
+void global_root::accept_forward(gc_forwarder& forwarder) noexcept {
+    std::lock_guard<std::mutex> global_lock(global_mutex);
+    forwarder.forward(*this);
+}
+
+header*& global_root::get_global_variable_unlocked() noexcept {
     return global_variable_ptr;
 }

@@ -19,7 +19,7 @@ namespace cfg::heap_manager {
     constexpr uint32_t LARGE_OBJECT_THRESHOLD = 256 * 1024; //<256kB
 
     /// min interval between two gc calls.
-    constexpr int64_t MIN_INTERVAL = 100; //<100ms
+    constexpr int64_t MIN_INTERVAL = 50; //<100ms
 
     /// interval between two automatic gc calls.
     constexpr int64_t PERIODIC_INTERVAL = 1000; //<1000ms

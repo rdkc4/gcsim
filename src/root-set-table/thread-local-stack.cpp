@@ -84,6 +84,11 @@ void thread_local_stack::accept(gc_visitor& visitor) noexcept {
     visitor.visit(*this);
 }
 
+void thread_local_stack::accept_forward(gc_forwarder& forwarder) noexcept {
+    std::lock_guard<std::mutex> tls_lock(tls_mutex);
+    forwarder.forward(*this);
+}
+
 indexed_stack<thread_local_stack_entry>& thread_local_stack::get_thread_stack_unlocked() noexcept {
     return thread_stack;
 }

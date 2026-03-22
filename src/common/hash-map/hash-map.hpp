@@ -50,7 +50,7 @@ private:
     void delete_entries_from_bucket(map_entry* head) noexcept {
         while(head){
             map_entry* temp = head;
-            head = head-> next;
+            head = head->next;
             delete temp;
         }
     }

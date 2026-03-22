@@ -8,9 +8,6 @@
  * @brief module defining the constants related to threads.
 */
 namespace cfg::threads {
-    /// number of thread of the heap manager's thread pool.
-    constexpr size_t HM_THREAD_COUNT = 8;
-
     /// number of thread of the garbage collector's thread pool.
     constexpr size_t GC_THREAD_COUNT = 8;
 

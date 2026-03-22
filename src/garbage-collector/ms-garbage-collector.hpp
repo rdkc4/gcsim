@@ -4,10 +4,13 @@
 #include <cstddef>
 
 #include "garbage-collector.hpp"
+#include "../common/segment/segment-info.hpp"
+#include "../common/segment/segment.hpp"
 #include "../root-set-table/root-set-table.hpp"
 #include "../root-set-table/thread-local-stack.hpp"
 #include "../root-set-table/global-root.hpp"
 #include "../root-set-table/register-root.hpp"
+#include "../segment-free-memory-table/segment-free-memory-table.hpp"
 #include "../heap/heap.hpp"
 
 /**
@@ -32,7 +35,14 @@ private:
      * @brief sweeps the unmarked objects from heap.
      * @param heap_memory - reference to a heap.
     */
-    void sweep(heap& heap_memory) noexcept;
+    void sweep(heap& heap_memory, segment_free_memory_table& free_memory_table) noexcept;
+
+    /**
+     * @brief merges free blocks in the segment.
+     * @param seg - reference to segment.
+     * @param seg_info - pointer to the information about the segment.
+    */
+    void coalesce_segment(segment& seg, segment_info* seg_info);
 
 public:
     /**
@@ -44,14 +54,15 @@ public:
     /**
      * @brief deletes the instance of the garbage collector.
     */
-    ~ms_garbage_collector() = default;
+    ~ms_garbage_collector() override final = default;
 
     /**
      * @brief collects the garbage from the heap.
      * @param root_set - reference to a root-set-table.
      * @param heap_memory - reference to a heap.
+     * @param free_memory_table -reference to a free memory table.
     */
-    void collect(root_set_table& root_set, heap& heap_memory) noexcept override final;
+    void collect(root_set_table& root_set, heap& heap_memory, segment_free_memory_table& free_memory_table) noexcept override final;
 
     /**
      * @brief marks the objects on the stack.

@@ -7,6 +7,7 @@
 #include "../common/header/header.hpp"
 #include "../common/root-set/root-set-base.hpp"
 #include "../common/gc/gc-visitor.hpp"
+#include "../common/gc/gc-forwarder.hpp"
 
 /**
  * @class register_root
@@ -28,12 +29,15 @@ private:
     /**
      * @brief getter for the variable.
      * @warning must be called when lock is held already.
-     * @returns pointer to a header of the variable.
+     * @returns reference to the pointer to the header of the variable.
     */
-    header* get_register_variable_unlocked() noexcept;
+    header*& get_register_variable_unlocked() noexcept;
 
     /// allowing mark-sweep gc to access getter for the variable.
     friend class ms_garbage_collector;
+
+    /// allowing mark-compact gc to access getter for the variable.
+    friend class mc_garbage_collector;
 
 public:
     /**
@@ -60,7 +64,14 @@ public:
      * @param visitor - reference to a gc visitor.
      * Calls marking on the gc visitor for register variable element.
     */
-    virtual void accept(gc_visitor& visitor) noexcept override final;
+    void accept(gc_visitor& visitor) noexcept override final;
+
+    /**
+     * @brief accepts the gc forwarder.
+     * @param forwarder - reference to a gc forwarder.
+     * Calls forward on the gc forwarder for register root.
+    */
+    void accept_forward(gc_forwarder& forwarder) noexcept override final;
 
 };
 

@@ -8,8 +8,9 @@
 #include "../common/hash-map/hash-map.hpp"
 #include "../common/header/header.hpp"
 #include "../common/root-set/root-set-base.hpp"
-#include "../common/gc/gc-visitor.hpp"
 #include "../common/root-set/thread-local-stack-entry.hpp"
+#include "../common/gc/gc-visitor.hpp"
+#include "../common/gc/gc-forwarder.hpp"
 
 /**
  * @class thread_local_stack
@@ -36,8 +37,11 @@ private:
     */
     indexed_stack<thread_local_stack_entry>& get_thread_stack_unlocked() noexcept;
 
-    /// allowing mark-sweep gc to access getter for the variable.
+    /// allowing mark-sweep gc to access getter for the variables.
     friend class ms_garbage_collector;
+
+    /// allowing mark-compact gc to access getter for the variables.
+    friend class mc_garbage_collector;
 
 public:
     /**
@@ -120,7 +124,14 @@ public:
      * @param visitor - reference to a gc visitor.
      * Calls marking on the gc visitor for thread-local elements.
     */
-    virtual void accept(gc_visitor& visitor) noexcept override final;
+    void accept(gc_visitor& visitor) noexcept override final;
+
+    /**
+     * @brief accepts the gc forwarder.
+     * @param forwarder - reference to a gc forwarder.
+     * Calls forward on the gc forwarder for thread-local elements.
+    */
+    void accept_forward(gc_forwarder& forwarder) noexcept override final;
 
 };
 

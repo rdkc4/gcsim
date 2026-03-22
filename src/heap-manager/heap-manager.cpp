@@ -1,18 +1,11 @@
 #include "heap-manager.hpp"
 
 #include <condition_variable>
-#include <latch>
 
 #include "../common/cfg/heap-cfg.hpp"
 #include "../common/cfg/heap-manager-cfg.hpp"
 
-void heap_manager::init(){
-    auto now = std::chrono::high_resolution_clock::now();
-    last_gc_time_ms.store(
-        std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count(), 
-        std::memory_order_release
-    );
-
+void heap_manager::init_free_memory(){
     for(size_t i = 0; i < cfg::heap::SMALL_OBJECT_SEGMENTS; ++i) {
         segment& segment = heap_memory.get_small_object_segment(i);
         header* initial_header = reinterpret_cast<header*>(segment.segment_memory);
@@ -82,11 +75,6 @@ void heap_manager::add_root(uint64_t id, root_set_base* base){
     root_set.add_root(id, base);
 }
 
-root_set_base* heap_manager::get_root(uint64_t id) {
-    std::lock_guard<std::mutex> root_set_lock(root_set_mutex);
-    return root_set.get_root(id);
-}
-
 void heap_manager::remove_root(uint64_t id){
     std::lock_guard<std::mutex> root_set_lock(root_set_mutex);
     root_set.remove_root(id);
@@ -110,8 +98,7 @@ void heap_manager::collect_garbage(){
         locks[i] = std::unique_lock<std::mutex>(segment_locks[i]);
     }
 
-    gc->collect(root_set, heap_memory);
-    coalesce_segments();
+    gc->collect(root_set, heap_memory, free_memory_table);
 }
 
 bool heap_manager::should_run_gc() const noexcept {
@@ -142,32 +129,6 @@ void heap_manager::periodic_gc_loop(std::stop_token stop_token){
             gc_in_progress.store(false, std::memory_order_release);
             gc_in_progress.notify_all();
         }
-    }
-}
-
-size_t heap_manager::get_segment_category_index(size_t segment_index) const noexcept {
-    if(segment_index < cfg::heap::SMALL_OBJECT_SEGMENTS){
-        return segment_index;
-    } 
-    else if(segment_index < cfg::heap::SMALL_OBJECT_SEGMENTS + cfg::heap::MEDIUM_OBJECT_SEGMENTS){
-        return segment_index - cfg::heap::SMALL_OBJECT_SEGMENTS;
-    }
-    else{
-        return segment_index - cfg::heap::SMALL_OBJECT_SEGMENTS - cfg::heap::MEDIUM_OBJECT_SEGMENTS;
-    }
-}
-
-segment& heap_manager::get_segment(size_t segment_index){
-    if(segment_index < cfg::heap::SMALL_OBJECT_SEGMENTS){
-        return heap_memory.get_small_object_segment(segment_index);
-    }
-    else if(segment_index < cfg::heap::SMALL_OBJECT_SEGMENTS + cfg::heap::MEDIUM_OBJECT_SEGMENTS){
-        return heap_memory.get_medium_object_segment(segment_index - cfg::heap::SMALL_OBJECT_SEGMENTS);
-    }
-    else{
-        return heap_memory.get_large_object_segment(
-            segment_index - cfg::heap::SMALL_OBJECT_SEGMENTS - cfg::heap::MEDIUM_OBJECT_SEGMENTS
-        );
     }
 }
 
@@ -275,60 +236,4 @@ header* heap_manager::allocate_from_segment(size_t segment_index, uint32_t bytes
 
     seg_info->free_bytes -= (current->size + static_cast<uint32_t>(sizeof(header)));
     return current;
-}
-
-void heap_manager::coalesce_segment(size_t segment_index){
-    segment& seg = get_segment(segment_index);
-    segment_info* seg_info = free_memory_table.get_segment_info(segment_index);
-
-    if(!seg_info) return;
-
-    header* free_list = nullptr;
-    uint32_t free_bytes = 0;
-
-    uint8_t* current_ptr = seg.segment_memory;
-    uint8_t* end_ptr = seg.segment_memory + cfg::heap::SEGMENT_SIZE;
-
-    while(current_ptr + sizeof(header) <= end_ptr){
-        header* hdr = reinterpret_cast<header*>(current_ptr);
-        if(hdr->size == 0 || current_ptr + sizeof(header) + static_cast<size_t>(hdr->size) > end_ptr){
-            break;
-        }
-
-        uint8_t* next_ptr = current_ptr + sizeof(header) + static_cast<size_t>(hdr->size);
-        while(next_ptr + sizeof(header) <= end_ptr){
-            header* next_hdr = reinterpret_cast<header*>(next_ptr);
-            if(!hdr->is_free() || !next_hdr->is_free()){
-                break;
-            }
-            hdr->size += static_cast<uint32_t>(sizeof(header)) + next_hdr->size;
-            next_ptr = current_ptr + sizeof(header) + static_cast<size_t>(hdr->size);
-        }
-
-        if(hdr->is_free()){
-            hdr->next = free_list;
-            free_list = hdr;
-            free_bytes += hdr->size + sizeof(header);
-        }
-
-        current_ptr = current_ptr + sizeof(header) + static_cast<size_t>(hdr->size);
-    }
-
-    seg_info->free_list_head = free_list;
-    std::atomic_ref<uint32_t>(seg_info->free_bytes).store(free_bytes, std::memory_order_release);
-}
-
-void heap_manager::coalesce_segments(){
-    if constexpr (cfg::heap::TOTAL_SEGMENTS == 0) return;
-    
-    std::latch completion_latch{cfg::heap::TOTAL_SEGMENTS};
-
-    for(size_t i = 0; i < cfg::heap::TOTAL_SEGMENTS; ++i){
-        heap_manager_thread_pool.enqueue([&, i] -> void {
-            coalesce_segment(i);
-            completion_latch.count_down();
-        });
-    }
-
-    completion_latch.wait();
 }

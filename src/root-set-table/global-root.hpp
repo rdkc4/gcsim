@@ -7,6 +7,7 @@
 #include "../common/header/header.hpp"
 #include "../common/root-set/root-set-base.hpp"
 #include "../common/gc/gc-visitor.hpp"
+#include "../common/gc/gc-forwarder.hpp"
 
 /**
  * @class global_root
@@ -29,10 +30,13 @@ private:
      * @warning must be called when lock is held already.
      * @returns pointer to a header of the variable.
     */
-    header* get_global_variable_unlocked() noexcept;
+    header*& get_global_variable_unlocked() noexcept;
 
     /// allowing mark-sweep gc to access getter for the variable.
     friend class ms_garbage_collector;
+
+    /// allowing mark-compact gc to access getter for the variable.
+    friend class mc_garbage_collector;
 
 public:
     /**
@@ -58,7 +62,14 @@ public:
      * @param visitor - reference to a gc visitor.
      * Calls marking on the gc visitor for global variable element.
     */
-    virtual void accept(gc_visitor& visitor) noexcept override final;
+    void accept(gc_visitor& visitor) noexcept override final;
+
+    /**
+     * @brief accepts the gc forwarder.
+     * @param forwarder - reference to a gc forwarder.
+     * Calls forward on the gc forwarder for global root.
+    */
+    void accept_forward(gc_forwarder& forwarder) noexcept override final;
 
 };
 

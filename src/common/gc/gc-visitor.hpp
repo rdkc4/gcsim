@@ -17,19 +17,19 @@ public:
     virtual ~gc_visitor() = default;
     
     /**
-     * @brief virtual function for marking elements of a thread stack.
+     * @brief virtual function for marking elements of the thread local stack.
      * @param stack - reference to a thread local stack.
     */
     virtual void visit(thread_local_stack& stack) = 0;
 
     /**
-     * @brief virtual function for marking elements of a global root.
+     * @brief virtual function for marking the global root.
      * @param global - reference to a global variable.
     */
     virtual void visit(global_root& global) = 0;
 
     /**
-     * @brief virtual function for marking elements of a register root
+     * @brief virtual function for marking the register root
      * @param reg - reference to a register variable.
     */
     virtual void visit(register_root& reg) = 0;
