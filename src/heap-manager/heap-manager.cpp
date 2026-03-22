@@ -6,11 +6,7 @@
 #include "../common/cfg/heap-cfg.hpp"
 #include "../common/cfg/heap-manager-cfg.hpp"
 
-heap_manager::heap_manager(size_t hm_thread_count, size_t gc_thread_count) 
-    : heap_manager_thread_pool(hm_thread_count), 
-      gc(gc_thread_count), 
-      gc_timer_thread([this](std::stop_token st) -> void {periodic_gc_loop(st); }) {
-
+void heap_manager::init(){
     auto now = std::chrono::high_resolution_clock::now();
     last_gc_time_ms.store(
         std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count(), 
@@ -114,7 +110,7 @@ void heap_manager::collect_garbage(){
         locks[i] = std::unique_lock<std::mutex>(segment_locks[i]);
     }
 
-    gc.collect(root_set, heap_memory);
+    gc->collect(root_set, heap_memory);
     coalesce_segments();
 }
 

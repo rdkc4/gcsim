@@ -25,7 +25,7 @@ SRCS = main.cpp \
 	src/root-set-table/thread-local-stack.cpp \
 	src/root-set-table/root-set-table.cpp \
 	src/segment-free-memory-table/segment-free-memory-table.cpp \
-	src/garbage-collector/gc.cpp \
+	src/garbage-collector/ms-garbage-collector.cpp \
 	src/heap-manager/heap-manager.cpp \
 	src/allocators/allocators.cpp
 

@@ -32,8 +32,8 @@ private:
     */
     header* get_register_variable_unlocked() noexcept;
 
-    /// allowing gc to access getter for the variable.
-    friend class garbage_collector;
+    /// allowing mark-sweep gc to access getter for the variable.
+    friend class ms_garbage_collector;
 
 public:
     /**
@@ -60,7 +60,7 @@ public:
      * @param visitor - reference to a gc visitor.
      * Calls marking on the gc visitor for register variable element.
     */
-    virtual void accept(gc_visitor& visitor) noexcept override;
+    virtual void accept(gc_visitor& visitor) noexcept override final;
 
 };
 

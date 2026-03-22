@@ -1,17 +1,18 @@
-#include "gc.hpp"
+#include "ms-garbage-collector.hpp"
 
 #include <latch>
 
 #include "../common/cfg/heap-cfg.hpp"
+#include "garbage-collector.hpp"
 
-garbage_collector::garbage_collector(size_t thread_count) : gc_thread_pool(thread_count) {}
+ms_garbage_collector::ms_garbage_collector(size_t thread_count) : garbage_collector{ thread_count } {}
 
-void garbage_collector::collect(root_set_table& root_set, heap& heap_memory) noexcept {
+void ms_garbage_collector::collect(root_set_table& root_set, heap& heap_memory) noexcept {
     mark(root_set);
     sweep(heap_memory);
 }
 
-void garbage_collector::visit(thread_local_stack& stack){
+void ms_garbage_collector::visit(thread_local_stack& stack){
     auto& stack_data = stack.get_thread_stack_unlocked();
     for(thread_local_stack_entry& entry : stack_data) {
         if(entry.ref_to){
@@ -20,21 +21,21 @@ void garbage_collector::visit(thread_local_stack& stack){
     }
 }
 
-void garbage_collector::visit(global_root& global){
+void ms_garbage_collector::visit(global_root& global){
     header* gvar = global.get_global_variable_unlocked();
     if(gvar){
         gvar->set_marked(true);
     }
 }
 
-void garbage_collector::visit(register_root& reg){
+void ms_garbage_collector::visit(register_root& reg){
     header* reg_var = reg.get_register_variable_unlocked();
     if(reg_var){
         reg_var->set_marked(true);
     }
 }
 
-void garbage_collector::mark(root_set_table& root_set) noexcept {
+void ms_garbage_collector::mark(root_set_table& root_set) noexcept {
     const size_t total = root_set.get_root_count();
     if(total == 0) return;
 
@@ -59,7 +60,7 @@ void garbage_collector::mark(root_set_table& root_set) noexcept {
     completion_latch.wait();
 }
 
-void garbage_collector::sweep_segment(segment& seg) noexcept {
+void ms_garbage_collector::sweep_segment(segment& seg) noexcept {
     uint8_t* ptr = seg.segment_memory;
     const uint8_t* endptr = seg.segment_memory + cfg::heap::SEGMENT_SIZE;
     
@@ -77,7 +78,7 @@ void garbage_collector::sweep_segment(segment& seg) noexcept {
     }
 }
 
-void garbage_collector::sweep(heap& heap_memory) noexcept {
+void ms_garbage_collector::sweep(heap& heap_memory) noexcept {
     if constexpr (cfg::heap::TOTAL_SEGMENTS == 0) return;
     
     std::latch completion_latch(cfg::heap::TOTAL_SEGMENTS);

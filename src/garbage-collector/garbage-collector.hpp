@@ -1,0 +1,33 @@
+#ifndef GARBAGE_COLLECTOR_HPP
+#define GARBAGE_COLLECTOR_HPP
+
+#include "../common/gc/gc-visitor.hpp"
+#include "../common/thread-pool/thread-pool.hpp"
+#include "../root-set-table/root-set-table.hpp"
+#include "../heap/heap.hpp"
+
+class garbage_collector : public gc_visitor {
+protected:
+    /// thread pool for concurrent marking and sweeping.
+    thread_pool gc_thread_pool;
+
+public:
+    /**
+     * @brief creates the instance of the garbage collector.
+    */
+    garbage_collector(size_t thread_count = 1) : gc_thread_pool{ thread_count } {}
+
+    /**
+     * @brief deletes the instance of the garbage collector.
+    */
+    virtual ~garbage_collector() = default;
+
+    /**
+     * @brief collects the garbage from the heap.
+     * @param root_set - reference to a root-set-table.
+     * @param heap_memory - reference to a heap.
+    */
+    virtual void collect(root_set_table& root_set, heap& heap_memory) noexcept = 0;
+};
+
+#endif

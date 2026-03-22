@@ -1,13 +1,17 @@
 #include <iostream>
+#include <utility>
 
 #include "src/allocators/allocators.hpp"
 #include "src/heap-manager/heap-manager.hpp"
 #include "src/common/cfg/threads-cfg.hpp"
+#include "src/root-set-table/thread-local-stack.hpp"
+#include "src/garbage-collector/ms-garbage-collector.hpp"
 
 int main() {
     heap_manager heap_mng(
-        cfg::threads::HM_THREAD_COUNT, 
-        cfg::threads::GC_THREAD_COUNT
+        std::in_place_type<ms_garbage_collector>,
+        cfg::threads::GC_THREAD_COUNT,
+        cfg::threads::HM_THREAD_COUNT 
     );
 
     constexpr size_t tls_count = 5;

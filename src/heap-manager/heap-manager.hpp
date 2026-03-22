@@ -1,16 +1,19 @@
 #ifndef HEAP_MANAGER_HPP
 #define HEAP_MANAGER_HPP
 
+#include <concepts>
 #include <cstdint>
 #include <atomic>
 #include <mutex>
 #include <stop_token>
 #include <thread>
+#include <utility>
 
 #include "../heap/heap.hpp"
 #include "../segment-free-memory-table/segment-free-memory-table.hpp"
+#include "../common/thread-pool/thread-pool.hpp"
 #include "../root-set-table/root-set-table.hpp"
-#include "../garbage-collector/gc.hpp"
+#include "../garbage-collector/garbage-collector.hpp"
 
 /**
  * @class heap_manager
@@ -33,11 +36,11 @@ private:
     /// table containing the roots. 
     root_set_table root_set;
 
+    /// gc for heap cleanup.
+    std::unique_ptr<garbage_collector> gc;
+
     /// thread pool for coalescing segments.
     thread_pool heap_manager_thread_pool;
-
-    /// gc for heap cleanup.
-    garbage_collector gc;
 
     /// indicates whether gc is currently running.
     std::atomic<bool> gc_in_progress{false};
@@ -114,13 +117,27 @@ private:
     */
     void coalesce_segments();
 
+    /**
+     * @brief initializes the free memory table.
+     * initializes the gc clock.
+    */
+    void init();
+
 public:
     /**
      * @brief creates the instance of the heap manager.
+     * @tparam type of the gc 
      * @param gc_thread_count - size of gc thread pool, defaults to 1.
+     * @param hm_thread_count - size of heap manager's thread pool, defaults to 1
      * @details initializes the segments on the heap, initializes free memory tables.
     */
-    heap_manager(size_t hm_thread_count, size_t gc_thread_count = 1);
+    template<typename GC>
+    requires std::derived_from<GC, garbage_collector>
+    heap_manager(std::in_place_type_t<GC>, size_t gc_thread_count = 1, size_t hm_thread_count = 1)
+        : gc{ std::make_unique<GC>(gc_thread_count) },
+          heap_manager_thread_pool{ hm_thread_count },
+          gc_timer_thread{ [this](std::stop_token st) -> void {periodic_gc_loop(st); } } 
+          { init(); }
 
     /**
      * @brief deletes the instance of the heap manager.
