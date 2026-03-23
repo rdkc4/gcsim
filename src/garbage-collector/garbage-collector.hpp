@@ -7,9 +7,14 @@
 #include "../segment-free-memory-table/segment-free-memory-table.hpp"
 #include "../heap/heap.hpp"
 
+/**
+ * @class garbage_collector
+ * @brief base class for garbage collectors.
+ * inherits from gc_visitor.
+*/
 class garbage_collector : public gc_visitor {
 protected:
-    /// thread pool for concurrent marking and sweeping.
+    /// thread pool for concurrent gc phases.
     thread_pool gc_thread_pool;
 
 public:

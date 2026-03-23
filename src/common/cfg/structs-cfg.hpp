@@ -32,4 +32,8 @@ namespace cfg::structs {
 
 };
 
+// data structure assertions.
+static_assert(cfg::structs::hash_map::DEFAULT_MAP_CAPACITY > 0, "Default map capacity must be positive");
+static_assert(cfg::structs::indexed_stack::DEFAULT_STACK_CAPACITY > 0, "Default stack capacity must be positive");
+
 #endif

@@ -19,4 +19,7 @@ namespace cfg::threads {
 
 };
 
+// thread assertions.
+static_assert(cfg::threads::GC_THREAD_COUNT > 0, "GC thread count must be positive");
+
 #endif

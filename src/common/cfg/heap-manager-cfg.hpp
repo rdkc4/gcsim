@@ -19,7 +19,7 @@ namespace cfg::heap_manager {
     constexpr uint32_t LARGE_OBJECT_THRESHOLD = 256 * 1024; //<256kB
 
     /// min interval between two gc calls.
-    constexpr int64_t MIN_INTERVAL = 50; //<100ms
+    constexpr int64_t MIN_INTERVAL = 50; //<50ms
 
     /// interval between two automatic gc calls.
     constexpr int64_t PERIODIC_INTERVAL = 1000; //<1000ms
@@ -31,5 +31,16 @@ namespace cfg::heap_manager {
     constexpr std::chrono::milliseconds PERIODIC_GC_INTERVAL{PERIODIC_INTERVAL};
 
 };
+
+// object threshold assertions.
+static_assert(cfg::heap_manager::SMALL_OBJECT_THRESHOLD > 0, "Small object threshold must be positive");
+static_assert(
+    cfg::heap_manager::MEDIUM_OBJECT_THRESHOLD > cfg::heap_manager::SMALL_OBJECT_THRESHOLD, 
+    "Medium object treshold must be greater than small object threshold"
+);
+static_assert(
+    cfg::heap_manager::LARGE_OBJECT_THRESHOLD > cfg::heap_manager::MEDIUM_OBJECT_THRESHOLD, 
+    "Large object treshold must be greater than medium object threshold"
+);
 
 #endif

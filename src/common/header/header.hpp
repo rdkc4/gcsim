@@ -10,10 +10,17 @@
  * Occupies 16 bytes.
 */
 struct header {
-    /// if current block is free => pointer to the next free block; otherwise nullptr.
-    header* next;
+    union {
+        /// if current block is free => pointer to the next free block; otherwise nullptr.
+        header* next;
+
+        /// stores the forwarding address during the mark-compact gc run.
+        header* forwarding_address;
+    };
+    
     /// size - the amount of memory the current block occupies.
     uint32_t size;
+
     /// flags - 0x000000mf; m - marked (0/1), f - free (0/1).
     std::atomic<uint32_t> flags; //< 32b only because of the alignment.
 
@@ -79,6 +86,7 @@ struct header {
 
 };
 
+// header assertions.
 static_assert(sizeof(header) == 16, "Header must be 16B");
 
 #endif

@@ -26,4 +26,11 @@ namespace cfg::heap {
     
 };
 
+// segment assertions.
+static_assert(cfg::heap::SEGMENT_SIZE > 0, "Size of the segment must be positive");
+static_assert(cfg::heap::SMALL_OBJECT_SEGMENTS, "Number of small object segments must be positive");
+static_assert(cfg::heap::MEDIUM_OBJECT_SEGMENTS, "Number of medium object segments must be positive");
+static_assert(cfg::heap::LARGE_OBJECT_SEGMENTS, "Number of large object segments must be positive");
+static_assert(cfg::heap::TOTAL_SEGMENTS, "Total number of segments must be positive");
+
 #endif

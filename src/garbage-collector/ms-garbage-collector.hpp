@@ -16,6 +16,7 @@
 /**
  * @class ms_garbage_collector
  * @brief implementation of the mark-sweep garbage collector.
+ * inherits from garbage_collector.
 */
 class ms_garbage_collector final : public garbage_collector {
 private:
@@ -26,23 +27,17 @@ private:
     void mark(root_set_table& root_set) noexcept;
 
     /**
-     * @brief sweeps objects from a segment.
-     * @param seg - reference to a segment.
+     * @brief sweeps the non-marked objects from the segment and merges adjacent free blocks.
+     * @param seg - reference to the segment.
+     * @param seg_info - pointer to the information of the segment. 
     */
-    void sweep_segment(segment& seg) noexcept;
+    void sweep_and_coalesce_segment(segment& seg, segment_info* seg_info) noexcept;
 
     /**
      * @brief sweeps the unmarked objects from heap.
      * @param heap_memory - reference to a heap.
     */
     void sweep(heap& heap_memory, segment_free_memory_table& free_memory_table) noexcept;
-
-    /**
-     * @brief merges free blocks in the segment.
-     * @param seg - reference to segment.
-     * @param seg_info - pointer to the information about the segment.
-    */
-    void coalesce_segment(segment& seg, segment_info* seg_info);
 
 public:
     /**

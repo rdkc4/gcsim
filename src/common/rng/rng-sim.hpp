@@ -55,4 +55,37 @@ namespace rng::sim {
 
 };
 
+// object distribution assertions.
+static_assert(
+    rng::sim::MAX_OBJECT_DISTRIBUTION > rng::sim::MIN_OBJECT_DISTRIBUTION, 
+    "Max object distribution number must be greater than min object distribution number"
+);
+
+// small object assertions.
+static_assert(rng::sim::MIN_SMALL_OBJECT_DISTRIBUTION > 0, "Min small object distribution number must be positive");
+static_assert(
+    rng::sim::MAX_SMALL_OBJECT_DISTRIBUTION > rng::sim::MIN_SMALL_OBJECT_DISTRIBUTION, 
+    "Max small object distribution number must be greater than min small object distribution number"
+);
+
+// medium object assertions.
+static_assert(
+    rng::sim::MIN_MEDIUM_OBJECT_DISTRIBUTION > rng::sim::MAX_SMALL_OBJECT_DISTRIBUTION, 
+    "Min medium object distribution number must be greater than max small object distribution number"
+);
+static_assert(
+    rng::sim::MAX_MEDIUM_OBJECT_DISTRIBUTION > rng::sim::MIN_MEDIUM_OBJECT_DISTRIBUTION, 
+    "Max medium object distribution number must be greater than min medium object distribution number"
+);
+
+// large object assertions.
+static_assert(
+    rng::sim::MIN_LARGE_OBJECT_DISTRIBUTION > rng::sim::MAX_MEDIUM_OBJECT_DISTRIBUTION, 
+    "Min large object distribution number must be greater than max medium object distribution number"
+);
+static_assert(
+    rng::sim::MAX_LARGE_OBJECT_DISTRIBUTION > rng::sim::MIN_LARGE_OBJECT_DISTRIBUTION, 
+    "Max large object distribution number must be greater than min large object distribution number"
+);
+
 #endif

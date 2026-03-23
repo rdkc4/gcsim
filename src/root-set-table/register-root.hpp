@@ -25,7 +25,6 @@ private:
     /// pointer to a header of the register variable on the heap.
     header* register_variable;
 
-
     /**
      * @brief getter for the variable.
      * @warning must be called when lock is held already.

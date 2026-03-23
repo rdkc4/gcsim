@@ -1,6 +1,7 @@
 #include "ms-garbage-collector.hpp"
 
 #include <cassert>
+#include <cstdint>
 #include <latch>
 
 #include "../common/cfg/heap-cfg.hpp"
@@ -61,22 +62,64 @@ void ms_garbage_collector::mark(root_set_table& root_set) noexcept {
     completion_latch.wait();
 }
 
-void ms_garbage_collector::sweep_segment(segment& seg) noexcept {
-    uint8_t* ptr = seg.segment_memory;
-    const uint8_t* endptr = seg.segment_memory + cfg::heap::SEGMENT_SIZE;
-    
-    while(ptr + sizeof(header) <= endptr) {
-        header* hdr = reinterpret_cast<header*>(ptr);
+void ms_garbage_collector::sweep_and_coalesce_segment(segment& seg, segment_info* seg_info) noexcept {
+    assert(seg_info != nullptr);
 
-        if(hdr->is_marked()) {
+    uint8_t* current_ptr = seg.segment_memory;
+    const uint8_t* end_ptr = current_ptr + cfg::heap::SEGMENT_SIZE;
+
+    header* free_list_head = nullptr;
+    header* free_list_tail = nullptr;
+
+    uint32_t free_bytes = 0;
+
+    while(current_ptr + sizeof(header) <= end_ptr){
+        header* hdr = reinterpret_cast<header*>(current_ptr);
+        if(current_ptr + sizeof(header) + static_cast<size_t>(hdr->size) > end_ptr) [[unlikely]] {
+            break;
+        }
+        hdr->next = nullptr;
+
+        if(hdr->is_marked()){
             hdr->set_marked(false);
+            hdr->set_free(false);
         }
         else {
             hdr->set_free(true);
+            
+            uint8_t* next_ptr = current_ptr + sizeof(header) + static_cast<size_t>(hdr->size);
+            while(next_ptr + sizeof(header) <= end_ptr){
+                header* next_hdr = reinterpret_cast<header*>(next_ptr);
+
+                if(next_ptr + sizeof(header) + static_cast<size_t>(next_hdr->size) > end_ptr) [[unlikely]] {
+                    break;
+                }
+
+                if(next_hdr->is_marked()){
+                    break;
+                }
+                next_hdr->set_free(true);
+                next_hdr->next = nullptr;
+
+                hdr->size += static_cast<uint32_t>(sizeof(header)) + next_hdr->size;
+                next_ptr = current_ptr + sizeof(header) + static_cast<size_t>(hdr->size); 
+            }
+
+            if(free_list_tail) [[likely]] {
+                free_list_tail->next = hdr;
+            }
+            else {
+                free_list_head = hdr;
+            }
+            free_list_tail = hdr;
+            free_bytes += hdr->size + static_cast<uint32_t>(sizeof(header));
         }
 
-        ptr += sizeof(header) + static_cast<size_t>(hdr->size);
+        current_ptr = current_ptr + sizeof(header) + static_cast<size_t>(hdr->size);
     }
+
+    seg_info->free_list_head = free_list_head;
+    seg_info->free_bytes = free_bytes;
 }
 
 void ms_garbage_collector::sweep(heap& heap_memory, segment_free_memory_table& free_memory_table) noexcept {
@@ -86,8 +129,7 @@ void ms_garbage_collector::sweep(heap& heap_memory, segment_free_memory_table& f
 
     auto enqueue_segment_sweep = [&](segment& segment, size_t absolute_idx) -> void {
         gc_thread_pool.enqueue([&, seg = &segment, absolute_idx] -> void {
-            sweep_segment(*seg);
-            coalesce_segment(*seg, free_memory_table.get_segment_info(absolute_idx));
+            sweep_and_coalesce_segment(*seg, free_memory_table.get_segment_info(absolute_idx));
             completion_latch.count_down();
         });
     };
@@ -106,49 +148,4 @@ void ms_garbage_collector::sweep(heap& heap_memory, segment_free_memory_table& f
     }
 
     completion_latch.wait();
-}
-
-void ms_garbage_collector::coalesce_segment(segment& seg, segment_info* seg_info){
-    assert(seg_info != nullptr);
-
-    header* free_list = nullptr;
-    header* free_list_tail = nullptr;
-    uint32_t free_bytes = 0;
-
-    uint8_t* current_ptr = seg.segment_memory;
-    uint8_t* end_ptr = seg.segment_memory + cfg::heap::SEGMENT_SIZE;
-
-    while(current_ptr + sizeof(header) <= end_ptr){
-        header* hdr = reinterpret_cast<header*>(current_ptr);
-        if(hdr->size == 0 || current_ptr + sizeof(header) + static_cast<size_t>(hdr->size) > end_ptr){
-            break;
-        }
-
-        uint8_t* next_ptr = current_ptr + sizeof(header) + static_cast<size_t>(hdr->size);
-        while(next_ptr + sizeof(header) <= end_ptr){
-            header* next_hdr = reinterpret_cast<header*>(next_ptr);
-            if(!hdr->is_free() || !next_hdr->is_free()){
-                break;
-            }
-            hdr->size += static_cast<uint32_t>(sizeof(header)) + next_hdr->size;
-            next_ptr = current_ptr + sizeof(header) + static_cast<size_t>(hdr->size);
-        }
-
-        if(hdr->is_free()){
-            hdr->next = nullptr;
-            if(free_list_tail)[[likely]] {
-                free_list_tail->next = hdr;
-            }
-            else {
-                free_list = hdr;
-            }
-            free_list_tail = hdr;
-            free_bytes += hdr->size + static_cast<uint32_t>(sizeof(header));
-        }
-
-        current_ptr = current_ptr + sizeof(header) + static_cast<size_t>(hdr->size);
-    }
-
-    seg_info->free_list_head = free_list;
-    seg_info->free_bytes = free_bytes;
 }

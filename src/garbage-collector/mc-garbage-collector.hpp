@@ -16,6 +16,7 @@
 /**
  * @class mc_garbage_collector
  * @brief implementation of the mark-compact garbage collector.
+ * inherits from garbage_collector and gc_forwarder.
 */
 class mc_garbage_collector final : public garbage_collector, public gc_forwarder {
 private:

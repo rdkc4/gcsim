@@ -96,7 +96,7 @@ void mc_garbage_collector::compute_forwarding_addresses_segment(segment& seg) no
         const size_t object_size = sizeof(header) + static_cast<size_t>(hdr->size);
 
         if(hdr->is_marked()) {
-            hdr->next = reinterpret_cast<header*>(free_ptr);
+            hdr->forwarding_address = reinterpret_cast<header*>(free_ptr);
             free_ptr += object_size;
         }
 
@@ -169,12 +169,12 @@ void mc_garbage_collector::compact_segment(segment& seg, segment_info* seg_info)
         const size_t object_size = sizeof(header) + static_cast<size_t>(hdr->size);
 
         if(hdr->is_marked()) {
-            header* dest = hdr->next;
+            header* dest = hdr->forwarding_address;
             if(dest != hdr){
                 std::memmove(dest, hdr, object_size);
             }
             dest->set_marked(false);
-            dest->next = nullptr;
+            dest->forwarding_address = nullptr;
             used_bytes += object_size;
         }
 
