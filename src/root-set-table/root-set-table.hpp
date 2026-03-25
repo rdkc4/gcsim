@@ -51,14 +51,12 @@ public:
      * @brief adds new root to the root set table.
      * @param id - id of the root.
      * @param root - instance of the root set entry.
-     * @returns void
     */
     void add_root(uint64_t id, root_set_base* root);
 
     /**
      * @brief removes root from the root set table.
      * @param id - id of the root.
-     * @returns void
     */
     void remove_root(uint64_t id);
 
@@ -90,7 +88,6 @@ public:
 
     /**
      * @brief removes all roots from root set table.
-     * @returns void
     */
     void clear() noexcept;
 

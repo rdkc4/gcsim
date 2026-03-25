@@ -21,6 +21,12 @@
 class ms_garbage_collector final : public garbage_collector {
 private:
     /**
+     * @brief marks the object and its refs.
+     * @param hdr - pointer to a header of the object.
+    */
+    void mark_object(header* hdr) noexcept;
+
+    /**
      * @brief marks all objects that are reachable from the root-set-table.
      * @param root_set - reference to a root-set-table
     */

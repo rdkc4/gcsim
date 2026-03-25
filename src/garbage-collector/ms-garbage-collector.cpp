@@ -5,6 +5,7 @@
 #include <latch>
 
 #include "../common/cfg/heap-cfg.hpp"
+#include "../common/indexed-stack/indexed-stack.hpp"
 
 ms_garbage_collector::ms_garbage_collector(size_t thread_count) : garbage_collector{ thread_count } {}
 
@@ -13,11 +14,31 @@ void ms_garbage_collector::collect(root_set_table& root_set, heap& heap_memory, 
     sweep(heap_memory, free_memory_table);
 }
 
+void ms_garbage_collector::mark_object(header* hdr) noexcept {
+    assert(hdr != nullptr);
+    
+    indexed_stack<header*> refs{64};
+    refs.push(hdr);
+    
+    while(!refs.empty()) {
+        header* current = refs.peek();
+        refs.pop();
+        
+        if(!current->try_mark()) continue;
+        
+        current->trace_refs([&](header** ref_slot) -> void {
+            if(header* ref = *ref_slot) {
+                refs.push(ref);
+            }
+        });
+    }
+}
+
 void ms_garbage_collector::visit(thread_local_stack& stack){
     auto& stack_data = stack.get_thread_stack_unlocked();
     for(thread_local_stack_entry& entry : stack_data) {
         if(entry.ref_to){
-            entry.ref_to->set_marked(true);
+            mark_object(entry.ref_to);
         }
     }
 }
@@ -25,14 +46,14 @@ void ms_garbage_collector::visit(thread_local_stack& stack){
 void ms_garbage_collector::visit(global_root& global){
     header* gvar = global.get_global_variable_unlocked();
     if(gvar){
-        gvar->set_marked(true);
+        mark_object(gvar);
     }
 }
 
 void ms_garbage_collector::visit(register_root& reg){
     header* reg_var = reg.get_register_variable_unlocked();
     if(reg_var){
-        reg_var->set_marked(true);
+        mark_object(reg_var);
     }
 }
 
@@ -48,10 +69,11 @@ void ms_garbage_collector::mark(root_set_table& root_set) noexcept {
 
     for(size_t i = 0; i < capacity; ++i) {
         for(auto* root = buckets[i]; root; root = root->next){
+            auto* root_obj = root->value;
             gc_thread_pool.enqueue(
-                [&, &root_value = root->value] -> void {
-                    if(root_value){
-                        root_value->accept(*this);
+                [&, root_obj] -> void {
+                    if(root_obj){
+                        root_obj->accept(*this);
                     }
                     completion_latch.count_down();
                 }

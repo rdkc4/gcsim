@@ -77,10 +77,10 @@ public:
      * @brief creates the instance of the indexed_stack.
      * @details preallocates the memory for DEFAULT_STACK_CAPACITY elements; default size 0.
     */
-    indexed_stack() : 
-        data(static_cast<T*>(::operator new(sizeof(T) * cfg::structs::indexed_stack::DEFAULT_STACK_CAPACITY))), 
-        size(0),
-        capacity(cfg::structs::indexed_stack::DEFAULT_STACK_CAPACITY) {}
+    indexed_stack(size_t initial_capacity = cfg::structs::indexed_stack::DEFAULT_STACK_CAPACITY)
+        : data{static_cast<T*>(::operator new(sizeof(T) * initial_capacity))}, 
+          size{0},
+          capacity{initial_capacity} {}
 
     /** 
      * @brief destroys the indexed_stack object.

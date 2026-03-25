@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <iostream>
 #include <format>
+#include <cstring>
 
 #include "../common/rng/rng-sim.hpp"
 #include "../common/core/identity/identity.hpp"
@@ -68,15 +69,34 @@ void allocators::simulate_alloc(size_t tls_count, size_t global_count, size_t re
 
 void allocators::simulate_tls_alloc(thread_local_stack* tls, size_t scope_count, size_t allocs_per_scope){
     if(!tls) return;
+
     for(size_t scope = 0; scope < scope_count; ++scope){
         tls->push_scope();
+
         for(size_t i = 0; i < allocs_per_scope; ++i){
-            header* obj = heap_manager_ref.allocate(rng::sim::generate_object_size());
-            tls->init(
-                core::identity::generate_variable_identity(), 
-                obj
-            );
+            const uint64_t ref_count = 1;
+            const size_t obj_size = sizeof(type_descriptor) + ref_count * sizeof(header*) + rng::sim::generate_object_size();
+
+            header* obj = heap_manager_ref.allocate(obj_size);
+            if(!obj) continue;
+
+            auto* td = reinterpret_cast<type_descriptor*>(obj + 1);
+            td->ref_count = ref_count;
+
+            for(uint64_t r = 0; r < ref_count; ++r) {
+                header** refs = reinterpret_cast<header**>(td + 1);
+                
+                refs[r] = heap_manager_ref.allocate(sizeof(type_descriptor) + 1);
+
+                if(refs[r]){
+                    auto* nested_td = reinterpret_cast<type_descriptor*>(refs[r]->data_ptr());
+                    nested_td->ref_count = 0;
+                }
+            }
+
+            tls->init(core::identity::generate_variable_identity(), obj);
         }
+
         tls->pop_scope();
     }
 }
@@ -84,21 +104,35 @@ void allocators::simulate_tls_alloc(thread_local_stack* tls, size_t scope_count,
 void allocators::simulate_global_alloc(global_root* global, size_t global_allocs){
     if(!global) return;
     for(size_t i = 0; i < global_allocs; ++i){
-        global->set_global_variable(
-            i & 1 
-                ? nullptr 
-                : heap_manager_ref.allocate(rng::sim::generate_object_size())
+        if(i & 1){
+            global->set_global_variable(nullptr);
+            continue;
+        }
+        header* obj = heap_manager_ref.allocate(
+            sizeof(type_descriptor) + rng::sim::generate_object_size()
         );
+        if(obj){
+            type_descriptor* td = reinterpret_cast<type_descriptor*>(obj->data_ptr());
+            td->ref_count = 0;
+        }
+        global->set_global_variable(obj);
     }
 }
 
 void allocators::simulate_register_alloc(register_root* reg, size_t register_allocs){
     if(!reg) return;
     for(size_t i = 0; i < register_allocs; ++i){
-        reg->set_register_variable(
-            i & 1 
-                ? nullptr 
-                : heap_manager_ref.allocate(rng::sim::generate_object_size())
+        if(i & 1){
+            reg->set_register_variable(nullptr);
+            continue;
+        }
+        header* obj = heap_manager_ref.allocate(
+            sizeof(type_descriptor) + rng::sim::generate_object_size()
         );
+        if(obj){
+            type_descriptor* td = reinterpret_cast<type_descriptor*>(obj->data_ptr());
+            td->ref_count = 0;
+        }
+        reg->set_register_variable(obj);
     }
 }

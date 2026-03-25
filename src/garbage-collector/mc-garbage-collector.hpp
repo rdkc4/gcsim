@@ -5,12 +5,13 @@
 
 #include "garbage-collector.hpp"
 #include "../common/gc/gc-forwarder.hpp"
+#include "../common/header/header.hpp"
+#include "../common/segment/segment.hpp"
+#include "../common/segment/segment-info.hpp"
 #include "../root-set-table/root-set-table.hpp"
 #include "../root-set-table/thread-local-stack.hpp"
 #include "../root-set-table/global-root.hpp"
 #include "../root-set-table/register-root.hpp"
-#include "../common/segment/segment-info.hpp"
-#include "../common/segment/segment.hpp"
 #include "../heap/heap.hpp"
 
 /**
@@ -21,10 +22,22 @@
 class mc_garbage_collector final : public garbage_collector, public gc_forwarder {
 private:
     /**
+     * @brief marks the object and its refs.
+     * @param hdr - pointer to a header of the object.
+    */
+    void mark_object(header* hdr) noexcept;
+
+    /**
      * @brief marks all objects that are reachable from the root-set-table.
      * @param root_set - reference to a root-set-table
     */
     void mark(root_set_table& root_set) noexcept;
+
+    /**
+     * @brief forwards the object and its refs.
+     * @param hdr - pointer to a header of the object.
+    */
+    void forward_object(header* hdr) noexcept;
 
     /**
      * @brief computes and stores forwarding addresses for all marked objects in a segment.
@@ -43,6 +56,18 @@ private:
      * @param root_set - reference to the root set table.
     */
     void update_roots(root_set_table& root_set) noexcept;
+
+    /**
+     * @brief updates heap references from the segment to new address.
+     * @param seg - reference to a segment.
+    */
+    void update_segment_refs(segment& seg) noexcept;
+
+    /**
+     * @brief updates all heap references to new addresses.
+     * @param heap_memory - reference to a heap memory.
+    */
+    void update_heap_refs(heap& heap_memory) noexcept;
 
     /**
      * @brief compacts a single segment by sliding all marked objects towards the start.
