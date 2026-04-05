@@ -13,18 +13,7 @@
 #include "../root-set-table/shared-global-space.hpp"
 #include "../common/cfg/sim-cfg.hpp"
 #include "../diagnostics/diagnostics.hpp"
-
-/**
- * @enum simulation_mode
- * @brief defines the type of the simulation.
-*/
-enum class simulation_mode { stress, relaxed };
-
-/**
- * @enum simulation_operation
- * @brief operation performed by simulator.
-*/
-enum class simulation_operation { tls_alloc = 0, global_alloc = 1, global_realloc = 2, register_realloc = 3 };
+#include "allocator-defs.hpp"
 
 /**
  * @class allocators
@@ -76,19 +65,6 @@ private:
             simulate();
             completion_latch.count_down();
         });
-    }
-
-    /**
-     * @brief getter for the name of the mode of simulation.
-     * @param mode - simulation mode.
-     * @returns name of the mode.
-    */
-    static constexpr const char* simulation_mode_name(simulation_mode mode) {
-        switch (mode) {
-            case simulation_mode::stress: return "stress";
-            case simulation_mode::relaxed: return "relaxed";
-        }
-        std::unreachable();
     }
 
     /**

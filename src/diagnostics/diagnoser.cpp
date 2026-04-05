@@ -1,12 +1,24 @@
 #include "diagnoser.hpp"
-#include "diagnostics.hpp"
+
 #include <chrono>
+
+#include "diagnostics.hpp"
+
+diagnoser::diagnoser(cli::cli_options& options){
+    std::cout << "====================Simulation Environment====================\n";
+    std::cout << "Number of mutators      : " << options.mutators << "\n";
+    std::cout << "Number of iterations    : " << options.iterations << "\n";
+    std::cout << "Simulation mode         : " << simulation_mode_name(options.mode) << "\n";
+    std::cout << "Garbage collector type  : " << garbage_collector_type_name(options.gc_type) << "\n";
+    std::cout << "==============================================================\n\n";
+}
 
 void diagnoser::record(diagnostics diagnostic){
     diagnostic_records.push(std::move(diagnostic));
 }
 
 void diagnoser::report(std::ostream& out) const noexcept {
+    out << "======================Diagnostic Reports======================\n";
     if(diagnostic_records.empty()){
         out << "No diagnostics recorded\n";
         return;
@@ -15,6 +27,7 @@ void diagnoser::report(std::ostream& out) const noexcept {
     for(const auto& diagnostic_record : diagnostic_records){
         out << diagnostic_record.report() << "\n";
     }
+    out << "==============================================================\n\n";
 }
 
 void diagnoser::report_avg(std::ostream& out) const noexcept {
@@ -47,5 +60,7 @@ void diagnoser::report_avg(std::ostream& out) const noexcept {
         .duration = avg_duration
     };
 
+    out << "===================Average Diagnostic Report==================\n";
     out << average_diagnostic_record.report();
+    out << "==============================================================\n\n";
 }

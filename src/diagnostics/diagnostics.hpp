@@ -25,6 +25,20 @@ struct diagnostics {
      * @returns formatted diagnostic record.
     */
     std::string report() const noexcept {
+        const auto duration_ms{ duration.count() };
+
+        const double throughput{ 
+            duration_ms > 0
+                ? (static_cast<double>(allocs) * 1000.0) / duration_ms
+                : 0.0
+        };
+
+        const double failure_pct{ 
+            allocs > 0
+                ? (static_cast<double>(failed_allocs) * 100.0) / allocs
+                : 0.0
+        };
+
         return std::format(
             "Execution time                : {} ms\n"
             "Total allocations             : {} objects\n"
@@ -33,9 +47,9 @@ struct diagnostics {
             "Failed allocation percentage  : {:.2f}%\n",
             duration.count(),
             allocs,
-            static_cast<double>(allocs) / duration.count() * 1000,
+            throughput,
             failed_allocs, allocs,
-            static_cast<double>(failed_allocs) / static_cast<double>(allocs) * 100
+            failure_pct
         );
     }
 

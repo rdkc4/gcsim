@@ -26,6 +26,7 @@ SRCS = main.cpp \
 	src/garbage-collector/ms-garbage-collector.cpp \
 	src/garbage-collector/mc-garbage-collector.cpp \
 	src/heap-manager/heap-manager.cpp \
+	src/cli/cli.cpp \
 	src/diagnostics/diagnoser.cpp \
 	src/allocators/allocators.cpp
 
