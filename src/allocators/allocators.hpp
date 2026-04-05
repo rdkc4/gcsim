@@ -4,6 +4,7 @@
 #include <latch>
 #include <utility>
 #include <atomic>
+#include <cstddef>
 
 #include "../heap-manager/heap-manager.hpp"
 #include "../common/thread-pool/thread-pool.hpp"
@@ -11,6 +12,7 @@
 #include "../root-set-table/shared-register-space.hpp"
 #include "../root-set-table/shared-global-space.hpp"
 #include "../common/cfg/sim-cfg.hpp"
+#include "../diagnostics/diagnostics.hpp"
 
 /**
  * @enum simulation_mode
@@ -140,7 +142,7 @@ public:
      * @param tls_count - number of threads that are allocating objects.
      * @param mode - mode of the simulation.
     */
-    void simulate_alloc(size_t tls_count, simulation_mode mode);
+    diagnostics simulate_alloc(size_t tls_count, simulation_mode mode);
 
 };
 

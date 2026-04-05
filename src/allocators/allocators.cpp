@@ -1,10 +1,7 @@
 #include "allocators.hpp"
 
 #include <chrono>
-#include <cstddef>
 #include <cstdint>
-#include <iostream>
-#include <format>
 #include <cstring>
 #include <memory>
 
@@ -22,11 +19,10 @@ thread_local size_t allocators::per_thread_allocs{0};
 
 thread_local size_t allocators::per_thread_failed_allocs{0};
 
-void allocators::simulate_alloc(size_t tls_count, simulation_mode mode){
+diagnostics allocators::simulate_alloc(size_t tls_count, simulation_mode mode){
     total_allocs = 0;
     total_failed_allocs = 0;
 
-    std::cout << std::format("Initializing {} simulation\n", simulation_mode_name(mode));
     const auto start_time{ std::chrono::high_resolution_clock::now() };
 
     std::latch completion_latch{ static_cast<ptrdiff_t>(tls_count) };
@@ -56,23 +52,15 @@ void allocators::simulate_alloc(size_t tls_count, simulation_mode mode){
         ) 
     };
 
-    std::cout << std::format("Total allocation count: {} allocations\n", total_allocs.load(std::memory_order_relaxed));
-    std::cout << std::format("Total execution time: {} ms ({} s)\n", duration.count(), duration.count() / 1000.0);
-
-    std::cout << std::format("Allocation throughput: {:.2f} allocs/ms ({:.2f} allocs/s)\n", 
-        static_cast<double>(total_allocs) / duration.count(), 
-        static_cast<double>(total_allocs) / duration.count() * 1000
-    );
-
-    std::cout << std::format("Failed to allocate {} out of {} objects ({:.2f}%)\n", 
-        total_failed_allocs.load(std::memory_order_relaxed),
-        total_allocs.load(std::memory_order_relaxed),
-        static_cast<double>(total_failed_allocs) / static_cast<double>(total_allocs)
-    );
-
-    std::cout << "Cleaning up after simulation\n";
+    /// cleanup after simulation.
     heap_manager_ref.clear_roots();
     heap_manager_ref.collect_garbage();
+
+    return diagnostics {
+        .allocs = total_allocs.load(std::memory_order_relaxed),
+        .failed_allocs = total_failed_allocs.load(std::memory_order_relaxed),
+        .duration = duration
+    };
 }
 
 void allocators::simulate_thread_alloc(thread_local_stack* tls, size_t scope_count, size_t allocs_per_scope){
