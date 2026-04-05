@@ -12,6 +12,9 @@ namespace cfg::heap {
     /// size of the single segment.
     constexpr uint32_t SEGMENT_SIZE = 16 * 1024 * 1024; //<16MB
 
+    /// alignment in the segment of the heap.
+    constexpr uint32_t SEGMENT_ALIGNMENT = 16;
+
     /// number of small object segments.
     constexpr size_t SMALL_OBJECT_SEGMENTS = 4;
 
@@ -27,6 +30,7 @@ namespace cfg::heap {
 };
 
 // segment assertions.
+static_assert(cfg::heap::SEGMENT_ALIGNMENT > 0, "Segment alignment must be positive");
 static_assert(cfg::heap::SEGMENT_SIZE > 0, "Size of the segment must be positive");
 static_assert(cfg::heap::SMALL_OBJECT_SEGMENTS, "Number of small object segments must be positive");
 static_assert(cfg::heap::MEDIUM_OBJECT_SEGMENTS, "Number of medium object segments must be positive");

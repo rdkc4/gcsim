@@ -1,11 +1,12 @@
 #include "ms-garbage-collector.hpp"
 
+#include <atomic>
 #include <cassert>
 #include <cstdint>
 #include <latch>
 
 #include "../common/cfg/heap-cfg.hpp"
-#include "../common/indexed-stack/indexed-stack.hpp"
+#include "../common/stack/indexed-stack.hpp"
 
 ms_garbage_collector::ms_garbage_collector(size_t thread_count) : garbage_collector{ thread_count } {}
 
@@ -35,26 +36,21 @@ void ms_garbage_collector::mark_object(header* hdr) noexcept {
 }
 
 void ms_garbage_collector::visit(thread_local_stack& stack){
-    auto& stack_data = stack.get_thread_stack_unlocked();
-    for(thread_local_stack_entry& entry : stack_data) {
-        if(entry.ref_to){
-            mark_object(entry.ref_to);
-        }
-    }
+    stack.for_each([&](header*& root){
+        mark_object(root);
+    });
 }
 
-void ms_garbage_collector::visit(global_root& global){
-    header* gvar = global.get_global_variable_unlocked();
-    if(gvar){
-        mark_object(gvar);
-    }
+void ms_garbage_collector::visit(shared_global_space& global){
+    global.for_each([&](header*& obj){
+        mark_object(obj);
+    });
 }
 
-void ms_garbage_collector::visit(register_root& reg){
-    header* reg_var = reg.get_register_variable_unlocked();
-    if(reg_var){
-        mark_object(reg_var);
-    }
+void ms_garbage_collector::visit(shared_register_space& reg){
+    reg.for_each([&](header*& obj){
+        mark_object(obj);
+    });
 }
 
 void ms_garbage_collector::mark(root_set_table& root_set) noexcept {
@@ -141,7 +137,7 @@ void ms_garbage_collector::sweep_and_coalesce_segment(segment& seg, segment_info
     }
 
     seg_info->free_list_head = free_list_head;
-    seg_info->free_bytes = free_bytes;
+    seg_info->free_bytes.store(free_bytes, std::memory_order_relaxed);
 }
 
 void ms_garbage_collector::sweep(heap& heap_memory, segment_free_memory_table& free_memory_table) noexcept {

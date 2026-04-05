@@ -38,9 +38,6 @@ private:
     /// gc for heap cleanup.
     std::unique_ptr<garbage_collector> gc;
 
-    /// indicates whether gc is currently running.
-    std::atomic<bool> gc_in_progress{false};
-
     /// small object segment that was used last, default to last.
     std::atomic<size_t> last_small_segment{cfg::heap::SMALL_OBJECT_SEGMENTS - 1};
 
@@ -54,11 +51,23 @@ private:
         cfg::heap::SMALL_OBJECT_SEGMENTS + cfg::heap::MEDIUM_OBJECT_SEGMENTS + cfg::heap::LARGE_OBJECT_SEGMENTS - 1
     };
     
+    /// indicates whether gc is currently running.
+    std::atomic<bool> gc_in_progress{false};
+
     /// last time garbage collection was done.
     std::atomic<uint64_t> last_gc_time_ms{0};
 
     /// background gc thread.
     std::jthread gc_timer_thread;
+
+    /// number of mutator threads currently registered.
+    std::atomic<size_t> mutator_count{0};
+
+    /// number of mutators at the safepoint.
+    std::atomic<size_t> mutators_at_safepoint{0};
+
+    /// gc requests mutators to stop.
+    std::atomic<bool> stw_requested;
 
     /**
      * @brief checks if enough time has passed since last garbage collection.
@@ -91,6 +100,12 @@ private:
      * @brief initializes the free memory table.
     */
     void init_free_memory();
+
+    /**
+     * @brief calculates the total free memory.
+     * @returns total free memory across all segments.
+    */
+    uint32_t calculate_free_memory() const noexcept;
 
 public:
     /**
@@ -150,11 +165,29 @@ public:
 
     /**
      * @brief starts the garbage collection.
+     * @param called_by_mutator - flag if gc was called by mutator, defaults to false.
      * @details "Stop the world", mark & sweep collection and coalescing of segments.
      * @warning can be called by client, but it may be expensive if called frequently.
     */
-    void collect_garbage();
+    void collect_garbage(bool called_by_mutator = false);
 
+    /**
+     * @brief registers the calling thread as a mutator.
+     * @details must be called before the thread starts allocating.
+     */
+    void register_mutator() noexcept;
+
+    /**
+     * @brief unregisters the calling thread as a mutator.
+     * @details must be called when the thread is done allocating.
+     */
+    void unregister_mutator() noexcept;
+
+    /**
+     * @brief polls for a safepoint request and parks if GC is pending.
+     * @details call between allocations - must not be called while holding a raw heap pointer that has not been pushed to the root set.
+     */
+    void safepoint_poll();
 };
 
 #endif

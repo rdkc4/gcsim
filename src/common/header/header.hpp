@@ -102,11 +102,11 @@ struct header {
     */
     template<typename Fn>
     void trace_refs(Fn&& fn) noexcept {
-        type_descriptor* td = reinterpret_cast<type_descriptor*>(data_ptr());
-        if (!td || td->ref_count == 0) return;
+        type_descriptor* td{ reinterpret_cast<type_descriptor*>(data_ptr()) };
+        if (td->ref_count == 0) return;
 
         header** refs = reinterpret_cast<header**>(td + 1);
-        for (uint64_t i = 0; i < td->ref_count; ++i){
+        for (uint64_t i{0}; i < td->ref_count; ++i){
             if (refs[i]){
                 fn(&refs[i]);
             }

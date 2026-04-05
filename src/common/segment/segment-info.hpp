@@ -14,7 +14,7 @@ struct segment_info {
     header* free_list_head;
 
     /// number of free bytes in a segment.
-    uint32_t free_bytes;
+    std::atomic<uint32_t> free_bytes;
 
     /**
      * @brief creates the instance of the segment_info.

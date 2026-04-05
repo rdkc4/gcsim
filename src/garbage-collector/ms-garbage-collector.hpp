@@ -8,8 +8,8 @@
 #include "../common/segment/segment.hpp"
 #include "../root-set-table/root-set-table.hpp"
 #include "../root-set-table/thread-local-stack.hpp"
-#include "../root-set-table/global-root.hpp"
-#include "../root-set-table/register-root.hpp"
+#include "../root-set-table/shared-global-space.hpp"
+#include "../root-set-table/shared-register-space.hpp"
 #include "../segment-free-memory-table/segment-free-memory-table.hpp"
 #include "../heap/heap.hpp"
 
@@ -72,16 +72,16 @@ public:
     void visit(thread_local_stack& stack) override final;
 
     /**
-     * @brief marks the global object.
-     * @param global - reference to a global root.
+     * @brief marks the global roots.
+     * @param global - reference to a global space.
     */
-    void visit(global_root& global) override final;
+    void visit(shared_global_space& global) override final;
 
     /**
-     * @brief marks the register object.
-     * @param reg - reference to a register root.
+     * @brief marks the register roots.
+     * @param reg - reference to a register space.
     */
-    void visit(register_root& reg) override final;
+    void visit(shared_register_space& reg) override final;
 
 };
 

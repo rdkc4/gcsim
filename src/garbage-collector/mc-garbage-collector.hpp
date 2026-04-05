@@ -10,8 +10,8 @@
 #include "../common/segment/segment-info.hpp"
 #include "../root-set-table/root-set-table.hpp"
 #include "../root-set-table/thread-local-stack.hpp"
-#include "../root-set-table/global-root.hpp"
-#include "../root-set-table/register-root.hpp"
+#include "../root-set-table/shared-global-space.hpp"
+#include "../root-set-table/shared-register-space.hpp"
 #include "../heap/heap.hpp"
 
 /**
@@ -110,16 +110,16 @@ public:
     void visit(thread_local_stack& stack) override final;
 
     /**
-     * @brief marks the global object.
-     * @param global - reference to a global root.
+     * @brief marks the global objects.
+     * @param global - reference to a global roots.
     */
-    void visit(global_root& global) override final;
+    void visit(shared_global_space& global) override final;
 
     /**
-     * @brief marks the register object.
-     * @param reg - reference to a register root.
+     * @brief marks the register objects.
+     * @param reg - reference to a register roots.
     */
-    void visit(register_root& reg) override final;
+    void visit(shared_register_space& reg) override final;
 
     /**
      * @brief forwards the objects on the stack to new addresses.
@@ -128,16 +128,16 @@ public:
     virtual void forward(thread_local_stack& stack) override final;
 
     /**
-     * @brief forwards the global root new addresses
-     * @param global - reference to a global variable.
+     * @brief forwards the global roots to new addresses
+     * @param global - reference to a global space.
     */
-    virtual void forward(global_root& global) override final;
+    virtual void forward(shared_global_space& global) override final;
     
     /**
-     * @brief forwards the register root new addresses
-     * @param reg - reference to a register variable.
+     * @brief forwards the register roots to new addresses
+     * @param reg - reference to a register space.
     */
-    virtual void forward(register_root& reg) override final;
+    virtual void forward(shared_register_space& reg) override final;
 
 };
 

@@ -216,6 +216,42 @@ public:
     }
 
     /**
+     * @brief emplaces the entry in the hash_map.
+     * @tparam KK - type of the key.
+     * @tparam VVArgs - types of the arguments.
+     * @param key - key of the entry.
+     * @param value_args - value arguments.
+    */
+    template<typename KK, typename... VVArgs>
+    requires std::is_constructible_v<K, KK&&> && std::is_constructible_v<V, VVArgs&&...>
+    void emplace(KK&& key, VVArgs&&... value_args) {
+        size_t bucket_idx = calculate_bucket(key);
+        map_entry* current = buckets[bucket_idx];
+
+        while(current){
+            if(current->key == key){
+                current->value.~V();
+                new (&current->value) V(std::forward<VVArgs>(value_args)...);
+                return;
+            }
+            current = current->next;
+        }
+
+        map_entry* new_entry = new hash_map_entry<K, V>(
+            std::forward<KK>(key),
+            std::forward<VVArgs>(value_args)...
+        );
+
+        new_entry->next = buckets[bucket_idx];
+        buckets[bucket_idx] = new_entry;
+        ++size;
+
+        if(load_factor() > cfg::structs::hash_map::MAX_LOAD_FACTOR){
+            resize();
+        }
+    }
+
+    /**
      * @brief looks up element in a hash_map.
      * @param key - const reference to a key.
      * @returns pointer to the value associated with the key; nullptr if not found.

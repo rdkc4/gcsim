@@ -2,7 +2,6 @@
 #define THREAD_LOCAL_STACK_ENTRY_HPP
 
 #include <cstddef>
-#include <cstdint>
 
 #include "../header/header.hpp"
 
@@ -16,9 +15,6 @@ struct thread_local_stack_entry {
 
     /// id of the scope in which variable was initialized (simulation purposes).
     size_t scope;
-
-    /// id of the variable.
-    uint64_t variable_id;
 
 };
 

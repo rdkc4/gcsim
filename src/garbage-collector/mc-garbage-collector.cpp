@@ -1,11 +1,12 @@
 #include "mc-garbage-collector.hpp"
 
+#include <atomic>
 #include <cassert>
 #include <latch>
 #include <cstring>
 
 #include "../common/cfg/heap-cfg.hpp"
-#include "../common/indexed-stack/indexed-stack.hpp"
+#include "../common/stack/indexed-stack.hpp"
 
 mc_garbage_collector::mc_garbage_collector(size_t thread_count) : garbage_collector{ thread_count } {}
 
@@ -38,26 +39,21 @@ void mc_garbage_collector::mark_object(header* hdr) noexcept {
 }
 
 void mc_garbage_collector::visit(thread_local_stack& stack){
-    auto& stack_data = stack.get_thread_stack_unlocked();
-    for(thread_local_stack_entry& entry : stack_data) {
-        if(entry.ref_to){
-            mark_object(entry.ref_to);
-        }
-    }
+    stack.for_each([&](header*& root){
+        mark_object(root);
+    });
 }
 
-void mc_garbage_collector::visit(global_root& global){
-    header* gvar = global.get_global_variable_unlocked();
-    if(gvar){
-        mark_object(gvar);
-    }
+void mc_garbage_collector::visit(shared_global_space& global){
+    global.for_each([&](header*& obj){
+        mark_object(obj);
+    });
 }
 
-void mc_garbage_collector::visit(register_root& reg){
-    header* reg_var = reg.get_register_variable_unlocked();
-    if(reg_var){
-        mark_object(reg_var);
-    }
+void mc_garbage_collector::visit(shared_register_space& reg){
+    reg.for_each([&](header*& obj){
+        mark_object(obj);
+    });
 }
 
 void mc_garbage_collector::forward_object(header* hdr) noexcept {
@@ -71,26 +67,25 @@ void mc_garbage_collector::forward_object(header* hdr) noexcept {
 }
 
 void mc_garbage_collector::forward(thread_local_stack& stack){
-    auto& stack_data = stack.get_thread_stack_unlocked();
-    for(thread_local_stack_entry& entry : stack_data) {
-        if(entry.ref_to && entry.ref_to->forwarding_address) {
-            entry.ref_to = entry.ref_to->forwarding_address;
+    stack.for_each([&](header*& root){
+        root = root->forwarding_address;
+    });
+}
+
+void mc_garbage_collector::forward(shared_global_space& global){
+    global.for_each([&](header*& obj){
+        if(obj->forwarding_address){
+            obj = obj->forwarding_address;
         }
-    }
+    });
 }
 
-void mc_garbage_collector::forward(global_root& global){
-    header*& gvar = global.get_global_variable_unlocked();
-    if(gvar && gvar->forwarding_address){
-        gvar = gvar->forwarding_address;
-    }
-}
-
-void mc_garbage_collector::forward(register_root& reg){
-    header*& reg_var = reg.get_register_variable_unlocked();
-    if(reg_var && reg_var->forwarding_address){
-        reg_var = reg_var->forwarding_address;
-    }
+void mc_garbage_collector::forward(shared_register_space& reg){
+    reg.for_each([&](header*& obj){
+        if(obj->forwarding_address){
+            obj = obj->forwarding_address;
+        }
+    });
 }
 
 void mc_garbage_collector::mark(root_set_table& root_set) noexcept {
@@ -271,7 +266,7 @@ void mc_garbage_collector::compact_segment(segment& seg, segment_info* seg_info)
         free_hdr->next = nullptr;
 
         seg_info->free_list_head = free_hdr;
-        seg_info->free_bytes = free_hdr->size;
+        seg_info->free_bytes.store(free_hdr->size, std::memory_order_relaxed);
     }
 
 }
