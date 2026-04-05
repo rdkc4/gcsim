@@ -1,6 +1,8 @@
 #include "heap-manager.hpp"
 
+#include <atomic>
 #include <condition_variable>
+#include <mutex>
 
 #include "../common/cfg/heap-cfg.hpp"
 #include "../common/cfg/heap-manager-cfg.hpp"
@@ -37,9 +39,21 @@ void heap_manager::init_free_memory(){
     }
 }
 
+uint32_t heap_manager::calculate_free_memory() const noexcept {
+    uint32_t total{0};
+    for(size_t i{0}; i < cfg::heap::TOTAL_SEGMENTS; ++i){
+        const segment_info* seg_info{ free_memory_table.get_segment_info(i) };
+        if(!seg_info) continue;
+
+        total += seg_info->free_bytes.load(std::memory_order_relaxed);
+    }
+
+    return total;
+}
+
 header* heap_manager::allocate(uint32_t bytes){
     if(bytes == 0) return nullptr;
-    bytes = (bytes + 15) & ~15;
+    bytes = (bytes + cfg::heap::SEGMENT_ALIGNMENT - 1) & ~(cfg::heap::SEGMENT_ALIGNMENT - 1);
 
     int segment_index = find_suitable_segment(bytes);
     if(segment_index >= 0){
@@ -51,20 +65,17 @@ header* heap_manager::allocate(uint32_t bytes){
     if(should_run_gc()){
         bool expected = false;
         if(gc_in_progress.compare_exchange_strong(expected, true, std::memory_order_acq_rel)){
-            collect_garbage();
-            gc_in_progress.store(false, std::memory_order_release);
-            gc_in_progress.notify_all();
+            collect_garbage(true); //< gc is being called by mutator.
         }
-    }
+        else {
+            safepoint_poll();
+        }
 
-    while(gc_in_progress.load(std::memory_order_acquire)){
-        gc_in_progress.wait(true);
-    }
-
-    segment_index = find_suitable_segment(bytes);
-    if(segment_index >= 0){
-        std::lock_guard<std::mutex> seg_lock(segment_locks[segment_index]);
-        return allocate_from_segment(static_cast<size_t>(segment_index), bytes);
+        segment_index = find_suitable_segment(bytes);
+        if(segment_index >= 0){
+            std::lock_guard<std::mutex> seg_lock(segment_locks[segment_index]);
+            return allocate_from_segment(static_cast<size_t>(segment_index), bytes);
+        }
     }
 
     return nullptr;
@@ -85,20 +96,38 @@ void heap_manager::clear_roots() noexcept {
     root_set.clear();
 }
 
-void heap_manager::collect_garbage(){
+void heap_manager::collect_garbage(bool called_by_mutator){
+    stw_requested.store(true, std::memory_order_release);
+    stw_requested.notify_all();
+
+    size_t expected_parked = mutator_count.load(std::memory_order_acquire);
+    if(called_by_mutator){
+        --expected_parked;
+    }
+
+    while(mutators_at_safepoint.load(std::memory_order_acquire) < expected_parked){
+        mutators_at_safepoint.wait(
+            mutators_at_safepoint.load(std::memory_order_acquire),
+            std::memory_order_acquire
+        );
+    }
+
+    {
+        std::lock_guard<std::mutex> root_set_lock(root_set_mutex);
+        gc->collect(root_set, heap_memory, free_memory_table);
+    }
+
     last_gc_time_ms.store(
         std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::high_resolution_clock::now().time_since_epoch()
         ).count(),std::memory_order_release
     );
-    std::lock_guard<std::mutex> root_set_lock(root_set_mutex);
+    
+    stw_requested.store(false, std::memory_order_release);
+    gc_in_progress.store(false, std::memory_order_release);
 
-    std::unique_lock<std::mutex> locks[cfg::heap::TOTAL_SEGMENTS];
-    for(size_t i = 0; i < cfg::heap::TOTAL_SEGMENTS; ++i){
-        locks[i] = std::unique_lock<std::mutex>(segment_locks[i]);
-    }
-
-    gc->collect(root_set, heap_memory, free_memory_table);
+    stw_requested.notify_all();
+    gc_in_progress.notify_all();
 }
 
 bool heap_manager::should_run_gc() const noexcept {
@@ -106,7 +135,18 @@ bool heap_manager::should_run_gc() const noexcept {
         std::chrono::high_resolution_clock::now().time_since_epoch()
     ).count();
     auto last_ms = last_gc_time_ms.load(std::memory_order_acquire);
-    return (now_ms - last_ms) >= cfg::heap_manager::MIN_GC_INTERVAL.count();
+
+    /// time-based gc trigger.
+    if((now_ms - last_ms) >= cfg::heap_manager::MIN_GC_INTERVAL.count()){
+        return true;
+    }
+
+    /// free memory-based gc trigger.
+    if(calculate_free_memory() < cfg::heap_manager::GC_LOW_MEMORY_THRESHOLD){
+        return true;
+    }
+
+    return false;
 }
 
 void heap_manager::periodic_gc_loop(std::stop_token stop_token){
@@ -126,8 +166,6 @@ void heap_manager::periodic_gc_loop(std::stop_token stop_token){
         bool expected = false;
         if(gc_in_progress.compare_exchange_strong(expected, true, std::memory_order_acq_rel)){
             collect_garbage();
-            gc_in_progress.store(false, std::memory_order_release);
-            gc_in_progress.notify_all();
         }
     }
 }
@@ -165,7 +203,7 @@ int heap_manager::find_suitable_segment(uint32_t bytes) noexcept {
         const segment_info* seg_info = free_memory_table.get_segment_info(idx);
         if(!seg_info) continue;
 
-        const uint32_t free_bytes = std::atomic_ref<const uint32_t>(seg_info->free_bytes).load(std::memory_order_acquire);
+        const uint32_t free_bytes = seg_info->free_bytes.load(std::memory_order_acquire);
         if(free_bytes < bytes + sizeof(header)) continue;
         
         if(fallback_segment_idx == -1 || fallback_segment_size < free_bytes){
@@ -197,7 +235,7 @@ header* heap_manager::allocate_from_segment(size_t segment_index, uint32_t bytes
     header* prev = nullptr;
 
     while(current){
-        if(current->is_free() && current->size >= bytes){
+        if(current->size >= bytes){
             break;
         }
         prev = current;
@@ -209,7 +247,7 @@ header* heap_manager::allocate_from_segment(size_t segment_index, uint32_t bytes
     }
 
     uint32_t remaining = current->size - bytes;
-    if(remaining >= static_cast<uint32_t>(sizeof(header)) + 16){
+    if(remaining >= static_cast<uint32_t>(sizeof(header)) + cfg::heap::SEGMENT_ALIGNMENT){
         header* new_header = reinterpret_cast<header*>(
             reinterpret_cast<uint8_t*>(current) + sizeof(header) + static_cast<size_t>(bytes)
         );
@@ -234,6 +272,32 @@ header* heap_manager::allocate_from_segment(size_t segment_index, uint32_t bytes
     }
     current->next = nullptr;
 
-    seg_info->free_bytes -= (current->size + static_cast<uint32_t>(sizeof(header)));
+    seg_info->free_bytes.fetch_sub(current->size + static_cast<uint32_t>(sizeof(header)));
     return current;
+}
+
+void heap_manager::register_mutator() noexcept {
+    mutator_count.fetch_add(1, std::memory_order_relaxed);
+}
+
+void heap_manager::unregister_mutator() noexcept {
+    mutator_count.fetch_sub(1, std::memory_order_acq_rel);
+
+    if(stw_requested.load(std::memory_order_acquire)){
+        mutators_at_safepoint.fetch_add(1, std::memory_order_acq_rel);
+        mutators_at_safepoint.notify_one();
+
+        stw_requested.wait(true, std::memory_order_acquire);
+        mutators_at_safepoint.fetch_sub(1, std::memory_order_acq_rel);
+    }
+}
+
+void heap_manager::safepoint_poll(){
+    if(!stw_requested.load(std::memory_order_acquire)) return;
+
+    mutators_at_safepoint.fetch_add(1, std::memory_order_acq_rel);
+    mutators_at_safepoint.notify_one();
+
+    stw_requested.wait(true, std::memory_order_acquire);
+    mutators_at_safepoint.fetch_sub(1, std::memory_order_acq_rel);
 }

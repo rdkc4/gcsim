@@ -1,14 +1,13 @@
 #ifndef THREAD_LOCAL_STACK_HPP
 #define THREAD_LOCAL_STACK_HPP
 
-#include <mutex>
-#include <cstdint>
-
-#include "../common/indexed-stack/indexed-stack.hpp"
-#include "../common/hash-map/hash-map.hpp"
+#include "../common/cfg/structs-cfg.hpp"
+#include "../common/stack/indexed-stack.hpp"
+#include "../common/stack/fixed-stack.hpp"
 #include "../common/header/header.hpp"
 #include "../common/root-set/root-set-base.hpp"
 #include "../common/root-set/thread-local-stack-entry.hpp"
+#include "../heap-manager/heap-manager.hpp"
 #include "../common/gc/gc-visitor.hpp"
 #include "../common/gc/gc-forwarder.hpp"
 
@@ -18,44 +17,61 @@
 */
 class thread_local_stack final : public root_set_base {
 private:
-    /// used for tls synchronization.
-    mutable std::mutex tls_mutex; 
-
     /// id of the last pushed scope.
     size_t scope;
 
-    /// stack of initialized variables.
-    indexed_stack<thread_local_stack_entry> thread_stack;
+    /// tls id for root-set-table.
+    const uint64_t tls_id;
 
-    /// mapping the variable id to its index inside of the thread_stack.
-    hash_map<uint64_t, size_t> var_to_idx;
+    /// reference to a heap manager.
+    heap_manager& heap_manager_ref;
+
+    /// stack of initialized variables.
+    indexed_stack<thread_local_stack_entry> tls;
+
+    /// stack of temporary objects.
+    fixed_stack<header*, cfg::structs::fixed_stack::MAX_STACK_CAPACITY> temporaries;
 
     /**
-     * @brief getter for the thread_stack.
-     * @warning must be called when lock is held already.
-     * @returns reference to thread_stack.
+     * @brief performs an operation on each variable on the tls.
+     * @tparam Fn - type of the function.
+     * @param fn - function that is performed on elements.
     */
-    indexed_stack<thread_local_stack_entry>& get_thread_stack_unlocked() noexcept;
+    template<typename Fn>
+    void for_each_variable(Fn&& fn) {
+        for(size_t i = 0; i < tls.get_size(); ++i){
+            auto& entry{ tls[i] };
 
-    /// allowing mark-sweep gc to access getter for the variables.
-    friend class ms_garbage_collector;
+            if(entry.ref_to){
+                fn(entry.ref_to);
+            }
+        }
+    }
 
-    /// allowing mark-compact gc to access getter for the variables.
-    friend class mc_garbage_collector;
+    /**
+     * @brief performs an operation on each temporary variable.
+     * @tparam Fn - type of the function.
+     * @param fn - function that is performed on elements.
+    */
+    template<typename Fn>
+    void for_each_temp_variable(Fn&& fn) {
+        for(size_t i = 0; i < temporaries.get_size(); ++i){
+            auto& temp{ temporaries[i] };
+
+            if(temp){
+                fn(temp);
+            }
+        }
+    }
 
 public:
     /**
      * @brief creates the instance of the thread_local_stack.
+     * @param heap_mngr - reference to a heap manager.
+     * @param id - id of the tls for root-set-table.
      * @details scope defaults to 1.
     */
-    thread_local_stack();
-    
-    /**
-     * @brief creates the instance of the thread_local_stack.
-     * @param hash_map_capacity - number of buckets in the hash_map.
-     * @details scope defaults to 1.
-    */
-    thread_local_stack(size_t hash_map_capacity);
+    thread_local_stack(heap_manager& heap_mngr, uint64_t id);
 
     /**
      * @brief deletes the thread_local_stack.
@@ -69,42 +85,41 @@ public:
     /// deleted assignment operator.
     thread_local_stack& operator=(const thread_local_stack&) = delete;
 
-    /**
-     * @brief constructs the thread_local_stack instance from an existing one.
-     * @param other - rvalue of the existing thread_local_stack.
-     * @details moves the ownership of the scope, thread_stack and var_to_idx map from other to this.
-    */
-    thread_local_stack(thread_local_stack&& other) noexcept;
+    /// deleted move constructor.
+    thread_local_stack(thread_local_stack&& other) = delete;
 
-    /**
-     * @brief constructs new thread_local_stack by assigning it an existing one.
-     * @param other - rvalue of the existing thread_local_stack.
-     * @details moves the ownership of the scope, thread_stack and var_to_idx map from other to this.
-    */
-    thread_local_stack& operator=(thread_local_stack&& other) noexcept;
+    /// deleted move assignment operator.
+    thread_local_stack& operator=(thread_local_stack&& other) = delete;
 
     /**
      * @brief initializes new variable.
-     * @param variable_id - id of the variable.
      * @param heap_ptr - pointer to the value of the variable on the heap.
-     * @throws std::invalid_argument when variable already exists.
     */
-    void init(uint64_t variable_id, header* heap_ptr = nullptr);
+    void init(header* heap_ptr = nullptr);
 
     /**
      * @brief assigns new value to a variable.
-     * @param variable_id - id of the variable.
+     * @param index - index on the indexed stack.
      * @param new_ref_to - pointer to a new value on the heap.
-     * @throws std::invalid_argument when variable_id is not previously initialized.
     */
-    void reassign_ref(uint64_t variable_id, header* new_ref_to);
+    void reassign_ref(size_t index, header* new_ref_to);
 
     /**
      * @brief removes the reference to a value on the heap.
-     * @param variable_id - id of the variable.
-     * @throws std::invalid_argument when variable_id is not previously initialized.
+     * @param index - index on the indexed stack.
     */
-    void remove_ref(uint64_t variable_id);
+    void remove_ref(size_t index);
+
+    /**
+     * @brief pushes temporary root onto stack.
+     * @param heap_ptr - pointer to an object on the heap.
+    */
+    header** push_temp(header* heap_ptr);
+
+    /**
+     * @brief pops the temporary root from the stack.
+    */
+    void pop_temp();
 
     /**
      * @brief simulates entering new scope.
@@ -118,6 +133,17 @@ public:
      * @note simulation purposes.
     */
     void pop_scope(bool destr = false);
+
+    /**
+     * @brief performs an operation on all roots owned by tls.
+     * @tparam Fn - type of the function.
+     * @param fn - function that is performed on each root.
+    */
+    template<typename Fn>
+    void for_each(Fn&& fn){
+        for_each_variable(fn);
+        for_each_temp_variable(fn);
+    }
 
     /**
      * @brief accepts the gc visitor.

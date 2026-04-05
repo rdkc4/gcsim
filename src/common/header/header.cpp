@@ -1,32 +1,30 @@
 #include "header.hpp"
 
-#include "../cfg/header-cfg.hpp"
-
 header::header() : next{ nullptr }, size{ 0 }, flags{ 0x01 } {}
 
 bool header::is_free() const noexcept {
-    return flags.load(std::memory_order_acquire) & cfg::header::IS_FREE; 
+    return flags.load(std::memory_order_relaxed) & cfg::header::IS_FREE; 
 }
 
 bool header::is_marked() const noexcept { 
-    return flags.load(std::memory_order_acquire) & cfg::header::IS_MARKED; 
+    return flags.load(std::memory_order_relaxed) & cfg::header::IS_MARKED; 
 }
 
 void header::set_free(bool free) noexcept {
     if(free){
-        flags.fetch_or(cfg::header::IS_FREE, std::memory_order_release);
+        flags.fetch_or(cfg::header::IS_FREE, std::memory_order_relaxed);
     }
     else {
-        flags.fetch_and(~cfg::header::IS_FREE, std::memory_order_release);
+        flags.fetch_and(~cfg::header::IS_FREE, std::memory_order_relaxed);
     }
 }
 
 void header::set_marked(bool marked) noexcept {
     if(marked){
-        flags.fetch_or(cfg::header::IS_MARKED, std::memory_order_release);
+        flags.fetch_or(cfg::header::IS_MARKED, std::memory_order_relaxed);
     }
     else {
-        flags.fetch_and(~cfg::header::IS_MARKED, std::memory_order_release);
+        flags.fetch_and(~cfg::header::IS_MARKED, std::memory_order_relaxed);
     }
 }
 

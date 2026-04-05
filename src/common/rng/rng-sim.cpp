@@ -4,10 +4,7 @@
 #include <random>
 #include <thread>
 
-#include "../cfg/sim-cfg.hpp"
-
 namespace rng::sim {
-    
     /// random number generator.
     thread_local std::mt19937 random_number_generator {
         []{
@@ -22,54 +19,65 @@ namespace rng::sim {
         }()
     };
 
-    /// distribution for object size category.
-    thread_local std::uniform_int_distribution<uint32_t> object_category_distribution {
-        MIN_OBJECT_DISTRIBUTION,
-        MAX_OBJECT_DISTRIBUTION
-    };
+    object_probability_t obj_size_probability{};
 
-    /// distribution for small object size.
-    thread_local std::uniform_int_distribution<uint32_t> small_object_distribution {
-        MIN_SMALL_OBJECT_DISTRIBUTION,
-        MAX_SMALL_OBJECT_DISTRIBUTION
-    };
+    ref_probability_t ref_count_probability{};
 
-    /// distribution for medium object size.
-    thread_local std::uniform_int_distribution<uint32_t> medium_object_distribution {
-        MIN_MEDIUM_OBJECT_DISTRIBUTION,
-        MAX_MEDIUM_OBJECT_DISTRIBUTION
-    };
-
-    /// distribution for large object size.
-    thread_local std::uniform_int_distribution<uint32_t> large_object_distribution {
-        MIN_LARGE_OBJECT_DISTRIBUTION,
-        MAX_LARGE_OBJECT_DISTRIBUTION
-    };
+    operation_probability_t op_type_t{};
 
     uint32_t generate_object_size(){
-        uint32_t category = object_category_distribution(random_number_generator);
+        uint32_t category = random_number_generator() % 100;
 
-        if (category <= cfg::sim::SMALL_OBJECT_CATEGORY_THRESHOLD) {
-            return small_object_distribution(random_number_generator);
-        } else if (category <= cfg::sim::MEDIUM_OBJECT_CATEGORY_THRESHOLD) {
-            return medium_object_distribution(random_number_generator);
-        } else {
-            return large_object_distribution(random_number_generator);
+        if(category < obj_size_probability.small_obj_p){
+            return MIN_SMALL_OBJECT_DISTRIBUTION +
+                (random_number_generator() % (MAX_SMALL_OBJECT_DISTRIBUTION - MIN_SMALL_OBJECT_DISTRIBUTION + 1));
         }
+        else if(category < obj_size_probability.medium_obj_p){
+            return MIN_MEDIUM_OBJECT_DISTRIBUTION +
+                (random_number_generator() % (MAX_MEDIUM_OBJECT_DISTRIBUTION - MIN_MEDIUM_OBJECT_DISTRIBUTION + 1));
+        }
+        /// category < obj_size_probability.large_obj_p
+        return MIN_LARGE_OBJECT_DISTRIBUTION +
+            (random_number_generator() % (MAX_LARGE_OBJECT_DISTRIBUTION - MIN_LARGE_OBJECT_DISTRIBUTION + 1));
+        
+    }
+
+    uint64_t generate_reference_count(){
+        uint32_t category = random_number_generator() % 100 ;
+
+        if(category < ref_count_probability.no_ref_p){
+            return 0;
+        }
+        else if(category < ref_count_probability.one_ref_p){
+            return 1;
+        }
+        /// category < ref_count_probability.two_ref_p
+        return 2;
+        
+    }
+
+    uint32_t generate_simulation_operation(){
+        uint32_t category = random_number_generator() % 100;
+
+        if(category < op_type_t.tls_alloc_p){
+            return 0;
+        }
+        else if(category < op_type_t.global_alloc_p){
+            return 1;
+        }
+        else if(category < op_type_t.global_realloc_p){
+            return 2;
+        }
+        /// category < op_type_t.register_realloc_p
+        return 3;
+        
     }
 
     namespace shared_space {
-        /// distribution of indexes of the shared spaces
-        thread_local std::uniform_int_distribution<size_t> index_distribution;
-
         size_t generate_index(size_t n){
             assert(n > 0);
 
-            return index_distribution(
-                random_number_generator, 
-                decltype(index_distribution)::param_type(0, n - 1)
-            );
+            return random_number_generator() % n;
         }
-
     };
 };

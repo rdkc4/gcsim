@@ -35,6 +35,20 @@ struct hash_map_entry {
      * @details next defaults to nullptr.
     */
     hash_map_entry(K&& k, V&& v) : next(nullptr), key(std::move(k)), value(std::move(v)) {}
+
+    /**
+     * @brief creates an instance of the hash_map entry.
+     * @tparam KK - type of the key.
+     * @tparam VVArgs - types of the arguments.
+     * @param key - key of the entry.
+     * @param value_args - value arguments.
+    */
+    template<typename KK, typename... VVArgs>
+    hash_map_entry(KK&& key, VVArgs&&... value_args)
+        : next(nullptr),
+          key(std::forward<KK>(key)),
+          value(std::forward<VVArgs>(value_args)...) {}
+
 };
 
 #endif

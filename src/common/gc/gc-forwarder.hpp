@@ -2,8 +2,8 @@
 #define GC_FORWARDER_HPP
 
 class thread_local_stack;
-class global_root;
-class register_root;
+class shared_global_space;
+class shared_register_space;
 
 /**
  * @class gc_forwarder
@@ -23,16 +23,16 @@ public:
     virtual void forward(thread_local_stack& stack) = 0;
 
     /**
-     * @brief virtual function for forwarding the global root.
-     * @param global - reference to a global variable.
+     * @brief virtual function for marking the global roots.
+     * @param global - reference to a global space.
     */
-    virtual void forward(global_root& global) = 0;
-    
+    virtual void forward(shared_global_space& global) = 0;
+
     /**
-     * @brief virtual function for forwarding the register root
-     * @param reg - reference to a register variable.
+     * @brief virtual function for marking the register roots.
+     * @param reg - reference to a register space.
     */
-    virtual void forward(register_root& reg) = 0;
+    virtual void forward(shared_register_space& reg) = 0;
 
 };
 

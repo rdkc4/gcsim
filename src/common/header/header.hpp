@@ -4,6 +4,9 @@
 #include <cstdint>
 #include <atomic>
 
+#include "../cfg/header-cfg.hpp"
+#include "type-descriptor.hpp"
+
 /**
  * @struct header
  * @brief header of the block inside of the heap segment.
@@ -59,6 +62,14 @@ struct header {
     void set_marked(bool marked) noexcept;
 
     /**
+     * @brief tries to mark the header.
+     * @returns true if header wasn't marked previously, false otherwise.
+    */
+    inline bool try_mark() noexcept {
+        return !(flags.fetch_or(cfg::header::IS_MARKED, std::memory_order_acq_rel) & cfg::header::IS_MARKED);
+    }
+
+    /**
      * @brief getter for the address where data begins.
      * @returns pointer to data.
     */
@@ -83,6 +94,24 @@ struct header {
      * @returns const pointer to header.
     */
     static const header* from_data(const void* ptr) noexcept;
+
+    /**
+     * @brief performs a function on each ref owned by object.
+     * @tparam Fn - function type.
+     * @param fn - function called on each ref.
+    */
+    template<typename Fn>
+    void trace_refs(Fn&& fn) noexcept {
+        type_descriptor* td{ reinterpret_cast<type_descriptor*>(data_ptr()) };
+        if (td->ref_count == 0) return;
+
+        header** refs = reinterpret_cast<header**>(td + 1);
+        for (uint64_t i{0}; i < td->ref_count; ++i){
+            if (refs[i]){
+                fn(&refs[i]);
+            }
+        }
+    }
 
 };
 

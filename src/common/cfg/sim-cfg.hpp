@@ -17,9 +17,6 @@ namespace cfg::sim {
     /// number of allocations per scope for tls in stress mode.
     constexpr size_t TLS_ALLOC_STRESS_THRESHOLD_PER_SCOPE = TLS_ALLOC_STRESS_THRESHOLD / TLS_SCOPE_COUNT_STRESS;
 
-    /// capacity of the hash-map that maps tls variable to its index in stress mode.
-    constexpr size_t TLS_MAP_CAPACITY_STRESS = TLS_ALLOC_STRESS_THRESHOLD_PER_SCOPE << 1;
-
     /// number of allocations per tls in relaxed mode.
     constexpr size_t TLS_ALLOC_RELAXED_THRESHOLD = 1024;
 
@@ -28,18 +25,6 @@ namespace cfg::sim {
 
     /// number of allocations per scope for tls in relaxed mode.
     constexpr size_t TLS_ALLOC_RELAXED_THRESHOLD_PER_SCOPE = TLS_ALLOC_RELAXED_THRESHOLD / TLS_SCOPE_COUNT_RELAXED;
-
-    /// capacity of the hash-map that maps tls variable to its index in relaxed mode.
-    constexpr size_t TLS_MAP_CAPACITY_RELAXED = TLS_ALLOC_RELAXED_THRESHOLD_PER_SCOPE << 1;
-
-    /// probability of the object to be in small object category.
-    constexpr int SMALL_OBJECT_CATEGORY_THRESHOLD = 90; //<90%
-
-    /// probability of the object to be in medium object category.
-    constexpr int MEDIUM_OBJECT_CATEGORY_THRESHOLD = 98; //<8%
-
-    /// probability of the object to be in large object category.
-    constexpr int LARGE_OBJECT_CATEGORY_THRESHOLD = 100; //<2%
 
     /// number of available registers.
     constexpr size_t REGISTER_COUNT = 10;

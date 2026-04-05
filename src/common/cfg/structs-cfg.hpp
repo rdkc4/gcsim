@@ -30,6 +30,11 @@ namespace cfg::structs {
         constexpr size_t DEFAULT_STACK_CAPACITY = 8;
     };
 
+    namespace fixed_stack {
+
+        constexpr size_t MAX_STACK_CAPACITY = 256;
+    };
+
 };
 
 // data structure assertions.

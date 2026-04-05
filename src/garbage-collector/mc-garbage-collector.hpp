@@ -5,12 +5,13 @@
 
 #include "garbage-collector.hpp"
 #include "../common/gc/gc-forwarder.hpp"
+#include "../common/header/header.hpp"
+#include "../common/segment/segment.hpp"
+#include "../common/segment/segment-info.hpp"
 #include "../root-set-table/root-set-table.hpp"
 #include "../root-set-table/thread-local-stack.hpp"
-#include "../root-set-table/global-root.hpp"
-#include "../root-set-table/register-root.hpp"
-#include "../common/segment/segment-info.hpp"
-#include "../common/segment/segment.hpp"
+#include "../root-set-table/shared-global-space.hpp"
+#include "../root-set-table/shared-register-space.hpp"
 #include "../heap/heap.hpp"
 
 /**
@@ -21,10 +22,22 @@
 class mc_garbage_collector final : public garbage_collector, public gc_forwarder {
 private:
     /**
+     * @brief marks the object and its refs.
+     * @param hdr - pointer to a header of the object.
+    */
+    void mark_object(header* hdr) noexcept;
+
+    /**
      * @brief marks all objects that are reachable from the root-set-table.
      * @param root_set - reference to a root-set-table
     */
     void mark(root_set_table& root_set) noexcept;
+
+    /**
+     * @brief forwards the object and its refs.
+     * @param hdr - pointer to a header of the object.
+    */
+    void forward_object(header* hdr) noexcept;
 
     /**
      * @brief computes and stores forwarding addresses for all marked objects in a segment.
@@ -43,6 +56,18 @@ private:
      * @param root_set - reference to the root set table.
     */
     void update_roots(root_set_table& root_set) noexcept;
+
+    /**
+     * @brief updates heap references from the segment to new address.
+     * @param seg - reference to a segment.
+    */
+    void update_segment_refs(segment& seg) noexcept;
+
+    /**
+     * @brief updates all heap references to new addresses.
+     * @param heap_memory - reference to a heap memory.
+    */
+    void update_heap_refs(heap& heap_memory) noexcept;
 
     /**
      * @brief compacts a single segment by sliding all marked objects towards the start.
@@ -85,16 +110,16 @@ public:
     void visit(thread_local_stack& stack) override final;
 
     /**
-     * @brief marks the global object.
-     * @param global - reference to a global root.
+     * @brief marks the global objects.
+     * @param global - reference to a global roots.
     */
-    void visit(global_root& global) override final;
+    void visit(shared_global_space& global) override final;
 
     /**
-     * @brief marks the register object.
-     * @param reg - reference to a register root.
+     * @brief marks the register objects.
+     * @param reg - reference to a register roots.
     */
-    void visit(register_root& reg) override final;
+    void visit(shared_register_space& reg) override final;
 
     /**
      * @brief forwards the objects on the stack to new addresses.
@@ -103,16 +128,16 @@ public:
     virtual void forward(thread_local_stack& stack) override final;
 
     /**
-     * @brief forwards the global root new addresses
-     * @param global - reference to a global variable.
+     * @brief forwards the global roots to new addresses
+     * @param global - reference to a global space.
     */
-    virtual void forward(global_root& global) override final;
+    virtual void forward(shared_global_space& global) override final;
     
     /**
-     * @brief forwards the register root new addresses
-     * @param reg - reference to a register variable.
+     * @brief forwards the register roots to new addresses
+     * @param reg - reference to a register space.
     */
-    virtual void forward(register_root& reg) override final;
+    virtual void forward(shared_register_space& reg) override final;
 
 };
 
