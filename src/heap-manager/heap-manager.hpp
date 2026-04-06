@@ -2,6 +2,7 @@
 #define HEAP_MANAGER_HPP
 
 #include <concepts>
+#include <condition_variable>
 #include <cstdint>
 #include <atomic>
 #include <mutex>
@@ -25,6 +26,12 @@ private:
 
     /// locks the root-set-table.
     std::mutex root_set_mutex;
+
+    /// stop-the-world mutex.
+    std::mutex stw_mutex;
+
+    /// condition variable for stw synchronization.
+    std::condition_variable stw_cv;
 
     /// segmented memory for object allocation.
     heap heap_memory;
@@ -64,7 +71,7 @@ private:
     std::atomic<size_t> mutator_count{0};
 
     /// number of mutators at the safepoint.
-    std::atomic<size_t> mutators_at_safepoint{0};
+    size_t mutators_at_safepoint{0};
 
     /// gc requests mutators to stop.
     std::atomic<bool> stw_requested;

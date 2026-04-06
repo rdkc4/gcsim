@@ -1,9 +1,5 @@
 #include "heap-manager.hpp"
 
-#include <atomic>
-#include <condition_variable>
-#include <mutex>
-
 #include "../common/cfg/heap-cfg.hpp"
 #include "../common/cfg/heap-manager-cfg.hpp"
 
@@ -53,7 +49,7 @@ uint32_t heap_manager::calculate_free_memory() const noexcept {
 
 header* heap_manager::allocate(uint32_t bytes){
     safepoint_poll();
-    
+
     if(bytes == 0) return nullptr;
     bytes = (bytes + cfg::heap::SEGMENT_ALIGNMENT - 1) & ~(cfg::heap::SEGMENT_ALIGNMENT - 1);
 
@@ -100,18 +96,17 @@ void heap_manager::clear_roots() noexcept {
 
 void heap_manager::collect_garbage(bool called_by_mutator){
     stw_requested.store(true, std::memory_order_release);
-    stw_requested.notify_all();
 
     size_t expected_parked = mutator_count.load(std::memory_order_acquire);
-    if(called_by_mutator){
+    if(called_by_mutator && expected_parked > 0){
         --expected_parked;
     }
 
-    while(mutators_at_safepoint.load(std::memory_order_acquire) < expected_parked){
-        mutators_at_safepoint.wait(
-            mutators_at_safepoint.load(std::memory_order_acquire),
-            std::memory_order_acquire
-        );
+    {
+        std::unique_lock<std::mutex> lock(stw_mutex);
+        stw_cv.wait(lock, [this, expected_parked] -> bool {
+            return mutators_at_safepoint >= expected_parked;
+        });
     }
 
     {
@@ -126,10 +121,12 @@ void heap_manager::collect_garbage(bool called_by_mutator){
     );
     
     stw_requested.store(false, std::memory_order_release);
-    gc_in_progress.store(false, std::memory_order_release);
+    {
+        std::unique_lock<std::mutex> lock(stw_mutex);
+        stw_cv.notify_all();
+    }
 
-    stw_requested.notify_all();
-    gc_in_progress.notify_all();
+    gc_in_progress.store(false, std::memory_order_release);
 }
 
 bool heap_manager::should_run_gc() const noexcept {
@@ -279,27 +276,25 @@ header* heap_manager::allocate_from_segment(size_t segment_index, uint32_t bytes
 }
 
 void heap_manager::register_mutator() noexcept {
+    safepoint_poll();
     mutator_count.fetch_add(1, std::memory_order_relaxed);
 }
 
 void heap_manager::unregister_mutator() noexcept {
+    safepoint_poll();
     mutator_count.fetch_sub(1, std::memory_order_acq_rel);
-
-    if(stw_requested.load(std::memory_order_acquire)){
-        mutators_at_safepoint.fetch_add(1, std::memory_order_acq_rel);
-        mutators_at_safepoint.notify_one();
-
-        stw_requested.wait(true, std::memory_order_acquire);
-        mutators_at_safepoint.fetch_sub(1, std::memory_order_acq_rel);
-    }
 }
 
 void heap_manager::safepoint_poll(){
     if(!stw_requested.load(std::memory_order_acquire)) return;
+    std::unique_lock<std::mutex> lock(stw_mutex);
 
-    mutators_at_safepoint.fetch_add(1, std::memory_order_acq_rel);
-    mutators_at_safepoint.notify_one();
+    ++mutators_at_safepoint;
+    stw_cv.notify_all();
 
-    stw_requested.wait(true, std::memory_order_acquire);
-    mutators_at_safepoint.fetch_sub(1, std::memory_order_acq_rel);
+    stw_cv.wait(lock, [this] { 
+        return !stw_requested.load(std::memory_order_acquire); 
+    });
+
+    --mutators_at_safepoint;
 }

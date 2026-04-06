@@ -48,11 +48,11 @@ run: $(EXEC)
 
 perf: CXXFLAGS := $(PERFCXXFLAGS)
 perf: SANITIZERS :=
-perf: clean $(EXEC)
+perf: $(EXEC)
 
 benchmark: CXXFLAGS := $(BENCHMARKCXXFLAGS)
 benchmark: SANITIZERS :=
-benchmark: clean $(EXEC)
+benchmark: $(EXEC)
 
 clean:
 	rm -f $(OBJS) $(EXEC)

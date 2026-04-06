@@ -27,7 +27,7 @@ void ms_garbage_collector::mark_object(header* hdr) noexcept {
         
         if(!current->try_mark()) continue;
         
-        current->trace_refs([&](header** ref_slot) -> void {
+        current->trace_refs([&refs](header** ref_slot) -> void {
             if(header* ref = *ref_slot) {
                 refs.push(ref);
             }
@@ -36,19 +36,19 @@ void ms_garbage_collector::mark_object(header* hdr) noexcept {
 }
 
 void ms_garbage_collector::visit(thread_local_stack& stack){
-    stack.for_each([&](header*& root){
+    stack.for_each([this](header*& root){
         mark_object(root);
     });
 }
 
 void ms_garbage_collector::visit(shared_global_space& global){
-    global.for_each([&](header*& obj){
+    global.for_each([this](header*& obj){
         mark_object(obj);
     });
 }
 
 void ms_garbage_collector::visit(shared_register_space& reg){
-    reg.for_each([&](header*& obj){
+    reg.for_each([this](header*& obj){
         mark_object(obj);
     });
 }
@@ -57,7 +57,7 @@ void ms_garbage_collector::mark(root_set_table& root_set) noexcept {
     const size_t total = root_set.get_root_count();
     if(total == 0) return;
 
-    std::latch completion_latch(static_cast<std::ptrdiff_t>(total));
+    std::latch completion_latch{ static_cast<std::ptrdiff_t>(total) };
 
     auto& roots_table = root_set.get_roots();
     auto** buckets = roots_table.get_buckets();
@@ -67,7 +67,7 @@ void ms_garbage_collector::mark(root_set_table& root_set) noexcept {
         for(auto* root = buckets[i]; root; root = root->next){
             auto* root_obj = root->value;
             gc_thread_pool.enqueue(
-                [&, root_obj] -> void {
+                [this, root_obj, &completion_latch] -> void {
                     if(root_obj){
                         root_obj->accept(*this);
                     }
@@ -143,13 +143,15 @@ void ms_garbage_collector::sweep_and_coalesce_segment(segment& seg, segment_info
 void ms_garbage_collector::sweep(heap& heap_memory, segment_free_memory_table& free_memory_table) noexcept {
     if constexpr (cfg::heap::TOTAL_SEGMENTS == 0) return;
     
-    std::latch completion_latch(cfg::heap::TOTAL_SEGMENTS);
+    std::latch completion_latch{ cfg::heap::TOTAL_SEGMENTS };
 
-    auto enqueue_segment_sweep = [&](segment& segment, size_t absolute_idx) -> void {
-        gc_thread_pool.enqueue([&, seg = &segment, absolute_idx] -> void {
-            sweep_and_coalesce_segment(*seg, free_memory_table.get_segment_info(absolute_idx));
-            completion_latch.count_down();
-        });
+    auto enqueue_segment_sweep = [this, &free_memory_table, &completion_latch](segment& segment, size_t absolute_idx) -> void {
+        gc_thread_pool.enqueue(
+            [this, seg = &segment, absolute_idx, &free_memory_table, &completion_latch] -> void {
+                sweep_and_coalesce_segment(*seg, free_memory_table.get_segment_info(absolute_idx));
+                completion_latch.count_down();
+            }
+        );
     };
 
     size_t absolute_idx = 0;

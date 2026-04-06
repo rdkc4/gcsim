@@ -30,7 +30,7 @@ void mc_garbage_collector::mark_object(header* hdr) noexcept {
         
         if(!current->try_mark()) continue;
 
-        current->trace_refs([&](header** ref_slot) -> void {
+        current->trace_refs([&refs](header** ref_slot) -> void {
             if(header* ref = *ref_slot) {
                 refs.push(ref);
             }
@@ -39,19 +39,19 @@ void mc_garbage_collector::mark_object(header* hdr) noexcept {
 }
 
 void mc_garbage_collector::visit(thread_local_stack& stack){
-    stack.for_each([&](header*& root){
+    stack.for_each([this](header*& root) -> void {
         mark_object(root);
     });
 }
 
 void mc_garbage_collector::visit(shared_global_space& global){
-    global.for_each([&](header*& obj){
+    global.for_each([this](header*& obj) -> void {
         mark_object(obj);
     });
 }
 
 void mc_garbage_collector::visit(shared_register_space& reg){
-    reg.for_each([&](header*& obj){
+    reg.for_each([this](header*& obj) -> void {
         mark_object(obj);
     });
 }
@@ -67,13 +67,13 @@ void mc_garbage_collector::forward_object(header* hdr) noexcept {
 }
 
 void mc_garbage_collector::forward(thread_local_stack& stack){
-    stack.for_each([&](header*& root){
+    stack.for_each([](header*& root) -> void {
         root = root->forwarding_address;
     });
 }
 
 void mc_garbage_collector::forward(shared_global_space& global){
-    global.for_each([&](header*& obj){
+    global.for_each([](header*& obj) -> void {
         if(obj->forwarding_address){
             obj = obj->forwarding_address;
         }
@@ -81,7 +81,7 @@ void mc_garbage_collector::forward(shared_global_space& global){
 }
 
 void mc_garbage_collector::forward(shared_register_space& reg){
-    reg.for_each([&](header*& obj){
+    reg.for_each([](header*& obj) -> void {
         if(obj->forwarding_address){
             obj = obj->forwarding_address;
         }
@@ -92,7 +92,7 @@ void mc_garbage_collector::mark(root_set_table& root_set) noexcept {
     const size_t total = root_set.get_root_count();
     if(total == 0) return;
 
-    std::latch completion_latch(static_cast<std::ptrdiff_t>(total));
+    std::latch completion_latch{ static_cast<std::ptrdiff_t>(total) };
 
     auto& roots_table = root_set.get_roots();
     auto** buckets = roots_table.get_buckets();
@@ -102,7 +102,7 @@ void mc_garbage_collector::mark(root_set_table& root_set) noexcept {
         for(auto* root = buckets[i]; root; root = root->next){
             auto* root_obj = root->value;
             gc_thread_pool.enqueue(
-                [&, root_obj] -> void {
+                [this, root_obj, &completion_latch] -> void {
                     if(root_obj){
                         root_obj->accept(*this);
                     }
@@ -139,12 +139,12 @@ void mc_garbage_collector::compute_forwarding_addresses_segment(segment& seg) no
 void mc_garbage_collector::compute_forwarding_addresses(heap& heap_memory) noexcept {
     if constexpr (cfg::heap::TOTAL_SEGMENTS == 0) return;
 
-    std::latch completion_latch(cfg::heap::TOTAL_SEGMENTS);
+    std::latch completion_latch{ cfg::heap::TOTAL_SEGMENTS };
 
-    auto enqueue_segment_forward = [&](segment& segment) -> void {
+    auto enqueue_segment_forward = [this, &completion_latch](segment& segment) -> void {
         gc_thread_pool.enqueue(
-            [&, seg = &segment] -> void {
-                compute_forwarding_addresses_segment(*seg);
+            [this, seg_ptr=&segment, &completion_latch] -> void {
+                compute_forwarding_addresses_segment(*seg_ptr);
                 completion_latch.count_down();
             }
         );
@@ -169,7 +169,7 @@ void mc_garbage_collector::update_roots(root_set_table& root_set) noexcept {
     const size_t total = root_set.get_root_count();
     if(total == 0) return;
 
-    std::latch completion_latch(static_cast<std::ptrdiff_t>(total));
+    std::latch completion_latch { static_cast<std::ptrdiff_t>(total) };
 
     auto& roots_table = root_set.get_roots();
     auto** buckets = roots_table.get_buckets();
@@ -179,7 +179,7 @@ void mc_garbage_collector::update_roots(root_set_table& root_set) noexcept {
         for(auto* root = buckets[i]; root; root = root->next) {
             auto* root_obj = root->value;
             gc_thread_pool.enqueue(
-                [&, root_obj] -> void {
+                [this, root_obj, &completion_latch] -> void {
                     if(root_obj) {
                         root_obj->accept_forward(*this);
                     }
@@ -210,12 +210,12 @@ void mc_garbage_collector::update_segment_refs(segment& seg) noexcept {
 void mc_garbage_collector::update_heap_refs(heap& heap_memory) noexcept {
     if constexpr (cfg::heap::TOTAL_SEGMENTS == 0) return;
 
-    std::latch completion_latch(cfg::heap::TOTAL_SEGMENTS);
+    std::latch completion_latch{ cfg::heap::TOTAL_SEGMENTS };
 
-    auto enqueue_segment_forward = [&](segment& segment) -> void {
+    auto enqueue_segment_forward = [this, &completion_latch](segment& segment) -> void {
         gc_thread_pool.enqueue(
-            [&, seg = &segment] -> void {
-                update_segment_refs(*seg);
+            [this, seg_ptr = &segment, &completion_latch] -> void {
+                update_segment_refs(*seg_ptr);
                 completion_latch.count_down();
             }
         );
@@ -274,11 +274,11 @@ void mc_garbage_collector::compact_segment(segment& seg, segment_info* seg_info)
 void mc_garbage_collector::compact(heap& heap_memory, segment_free_memory_table& free_memory_table) noexcept {
     if constexpr (cfg::heap::TOTAL_SEGMENTS == 0) return;
 
-    std::latch completion_latch(cfg::heap::TOTAL_SEGMENTS);
+    std::latch completion_latch{ cfg::heap::TOTAL_SEGMENTS };
 
-    auto enqueue_segment_compact = [&](segment& segment, size_t absolute_idx) -> void {
+    auto enqueue_segment_compact = [this, &free_memory_table, &completion_latch](segment& segment, size_t absolute_idx) -> void {
         gc_thread_pool.enqueue(
-            [&, seg = &segment, absolute_idx] -> void {
+            [this, seg = &segment, absolute_idx, &free_memory_table, &completion_latch] -> void {
                 compact_segment(*seg, free_memory_table.get_segment_info(absolute_idx));
                 completion_latch.count_down();
             }
