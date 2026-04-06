@@ -1,10 +1,11 @@
 #include "diagnoser.hpp"
 
 #include <chrono>
+#include <fstream>
 
 #include "diagnostics.hpp"
 
-diagnoser::diagnoser(cli::cli_options& options){
+diagnoser::diagnoser(cli::cli_options& options) : options{ options} {
     std::cout << "====================Simulation Environment====================\n";
     std::cout << "Number of mutators      : " << options.mutators << "\n";
     std::cout << "Number of iterations    : " << options.iterations << "\n";
@@ -63,4 +64,26 @@ void diagnoser::report_avg(std::ostream& out) const noexcept {
     out << "===================Average Diagnostic Report==================\n";
     out << average_diagnostic_record.report();
     out << "==============================================================\n\n";
+}
+
+void diagnoser::export_report(){
+    if(options.output.empty()){
+        return;
+    }
+
+    std::ofstream out{ options.output };
+    if(!out){
+        std::cerr << std::format("Failed to open file '{}'", options.output);
+        return;
+    }
+
+    out << "mutators,mode,gc_type,duration_ms,allocs,throughput_a_ms,failed_allocs,fail_rate_pct\n";
+    for(const auto& diagnostic : diagnostic_records){
+        out << std::format("{},{},{},{}\n", 
+            options.mutators,
+            simulation_mode_name(options.mode),
+            garbage_collector_type_name(options.gc_type),
+            diagnostic.report_csv()
+        );
+    }
 }

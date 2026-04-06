@@ -8,6 +8,7 @@
 #include "../common/rng/rng-sim.hpp"
 #include "../common/core/identity/identity.hpp"
 #include "../root-set-table/root-guard.hpp"
+#include "mutator-guard.hpp"
 
 allocators::allocators(heap_manager& heap_manager_ref, size_t thread_count) 
     : heap_manager_ref{heap_manager_ref}, 
@@ -37,9 +38,8 @@ diagnostics allocators::simulate_alloc(size_t tls_count, simulation_mode mode){
         };
         enqueue_simulation(
             [this, tls=std::move(tls), tls_scopes, tls_allocs] -> void {
-                heap_manager_ref.register_mutator();
+                mutator_guard guard{ heap_manager_ref };
                 simulate_thread_alloc(tls.get(), tls_scopes, tls_allocs);
-                heap_manager_ref.unregister_mutator();
             }, 
             completion_latch
         );
@@ -72,8 +72,6 @@ void allocators::simulate_thread_alloc(thread_local_stack* tls, size_t scope_cou
         tls->push_scope();
 
         for(size_t i = 0; i < allocs_per_scope; ++i){
-            heap_manager_ref.safepoint_poll();
-
             header* obj{ allocate_object(tls) };
 
             simulation_operation sim_op{ static_cast<simulation_operation>(rng::sim::generate_simulation_operation()) };

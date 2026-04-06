@@ -2,6 +2,7 @@
 #include <format>
 #include <iostream>
 #include <utility>
+#include <memory>
 
 #include "src/allocators/allocator-defs.hpp"
 #include "src/allocators/allocators.hpp"
@@ -21,6 +22,7 @@
  * -i, --iterations         : number of simulation iterations, positive number
  * -m, --mode               : simulation mode: stress, relaxed
  * -M, --mutators           : number of concurrent mutators min 1, max 10
+ * -o, --output             : output file for simulation results
  * -h, --help               : display this help text
 */
 int main(int argc, char** argv){
@@ -43,21 +45,23 @@ int main(int argc, char** argv){
         }
     }
 
-    heap_manager heap_mng{
-        (options.gc_type == garbage_collector_type::mark_sweep)
-            ? heap_manager(
+    auto heap_mng = [&]() -> std::unique_ptr<heap_manager> {
+        if (options.gc_type == garbage_collector_type::mark_sweep) {
+            return std::make_unique<heap_manager>(
                 std::in_place_type<ms_garbage_collector>,
                 cfg::threads::GC_THREAD_COUNT
-            )
-            : heap_manager(
+            );
+        } else {
+            return std::make_unique<heap_manager>(
                 std::in_place_type<mc_garbage_collector>,
                 cfg::threads::GC_THREAD_COUNT
-            )
-    };
+            );
+        }
+    }();
 
     diagnoser diagnoser{ options };
 
-    allocators allocator(heap_mng, options.mutators);
+    allocators allocator(*heap_mng, options.mutators);
     for(size_t i{0}; i < options.iterations; ++i){
         diagnoser.record(
             allocator.simulate_alloc(
@@ -69,6 +73,7 @@ int main(int argc, char** argv){
 
     diagnoser.report();
     diagnoser.report_avg();
+    diagnoser.export_report();
     
     return 0;
 }

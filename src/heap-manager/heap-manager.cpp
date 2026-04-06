@@ -52,6 +52,8 @@ uint32_t heap_manager::calculate_free_memory() const noexcept {
 }
 
 header* heap_manager::allocate(uint32_t bytes){
+    safepoint_poll();
+    
     if(bytes == 0) return nullptr;
     bytes = (bytes + cfg::heap::SEGMENT_ALIGNMENT - 1) & ~(cfg::heap::SEGMENT_ALIGNMENT - 1);
 

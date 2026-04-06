@@ -32,6 +32,9 @@ namespace cli {
         /// type of the garbage collector, defaults to mark-sweep.
         garbage_collector_type gc_type{garbage_collector_type::mark_sweep};
 
+        /// output file for simulation results.
+        std::string output{""};
+
     };
 
     /**
@@ -62,7 +65,7 @@ namespace cli {
      * @param gc_type_arg - garbage collector type argument.
      * @throws runtime error when gc_type_arg is invalid type.
     */
-    void handle_gc_type_arg(cli_options& options, const char* gc_type_arg);
+    void handle_gc_type_arg(cli_options& options, std::string_view gc_type_arg);
 
     /**
      * @brief handles argument for simulator iterations.
@@ -70,7 +73,7 @@ namespace cli {
      * @param iteration_arg - argument for iteration count.
      * @throws runtime error when iteration_arg is not positive.
     */
-    void handle_iteration_arg(cli_options& options, const char* iteration_arg);
+    void handle_iteration_arg(cli_options& options, std::string_view iteration_arg);
 
     /**
      * @brief handles argument for simulation mode.
@@ -78,7 +81,7 @@ namespace cli {
      * @param mode_arg - simulation mode argument.
      * @throws runtime error when mode_arg is invalid mode.
     */
-    void handle_mode_arg(cli_options& options, const char* mode_arg);
+    void handle_mode_arg(cli_options& options, std::string_view mode_arg);
 
     /**
      * @brief handles argument for mutators.
@@ -86,7 +89,15 @@ namespace cli {
      * @param mutator_arg - argument for mutator count.
      * @throws runtime error when mutator_arg is invalid number.
     */
-    void handle_mutator_arg(cli_options& options, const char* mutator_arg);
+    void handle_mutator_arg(cli_options& options, std::string_view mutator_arg);
+
+    /**
+     * @brief handles argument for output.
+     * @param options - reference to cli options.
+     * @param output_arg - argument for output file.
+     * @throws runtime error when output_arg is previously set.
+    */
+    void handle_output_arg(cli_options& options, std::string_view output_arg);
 
     /**
      * @brief displays the heap manager simulator usage and options.
