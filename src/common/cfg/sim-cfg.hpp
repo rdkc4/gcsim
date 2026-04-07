@@ -18,10 +18,10 @@ namespace cfg::sim {
     constexpr size_t TLS_ALLOC_STRESS_THRESHOLD_PER_SCOPE = TLS_ALLOC_STRESS_THRESHOLD / TLS_SCOPE_COUNT_STRESS;
 
     /// number of allocations per tls in relaxed mode.
-    constexpr size_t TLS_ALLOC_RELAXED_THRESHOLD = 1024;
+    constexpr size_t TLS_ALLOC_RELAXED_THRESHOLD = 200000;
 
     /// number of scopes per tls in relaxed mode.
-    constexpr size_t TLS_SCOPE_COUNT_RELAXED = 8;
+    constexpr size_t TLS_SCOPE_COUNT_RELAXED = 10;
 
     /// number of allocations per scope for tls in relaxed mode.
     constexpr size_t TLS_ALLOC_RELAXED_THRESHOLD_PER_SCOPE = TLS_ALLOC_RELAXED_THRESHOLD / TLS_SCOPE_COUNT_RELAXED;

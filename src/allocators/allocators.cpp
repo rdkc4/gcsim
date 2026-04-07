@@ -29,7 +29,7 @@ diagnostics allocators::simulate_alloc(size_t tls_count, simulation_mode mode){
     std::latch completion_latch{ static_cast<ptrdiff_t>(tls_count) };
     
     const size_t tls_scopes{ tls_scope_count(mode) };
-    const size_t tls_allocs{ tls_allocs_per_scope(mode) };
+    const size_t tls_allocs{ tls_allocs_per_scope(mode, tls_count) };
 
     for(size_t i{0}; i < tls_count; ++i){
         auto tls{ std::make_unique<thread_local_stack>(

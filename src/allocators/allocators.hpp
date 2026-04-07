@@ -74,8 +74,10 @@ private:
     */
     static constexpr size_t tls_scope_count(simulation_mode mode){
         switch(mode){
-            case simulation_mode::stress: return cfg::sim::TLS_SCOPE_COUNT_STRESS;
-            case simulation_mode::relaxed: return cfg::sim::TLS_SCOPE_COUNT_RELAXED;
+            case simulation_mode::stress: 
+                return cfg::sim::TLS_SCOPE_COUNT_STRESS;
+            case simulation_mode::relaxed: 
+                return cfg::sim::TLS_SCOPE_COUNT_RELAXED;
         }
         std::unreachable();
     }
@@ -83,12 +85,15 @@ private:
     /**
      * @brief getter for tls allocation count per scope.
      * @param mode - mode of the simulation.
+     * @param thread_count - number of threads that share the work, used for relaxed simulations.
      * @returns number of allocation for tls per scope.
     */
-    static constexpr size_t tls_allocs_per_scope(simulation_mode mode){
+    static constexpr size_t tls_allocs_per_scope(simulation_mode mode, size_t thread_count = 1){
         switch(mode){
-            case simulation_mode::stress: return cfg::sim::TLS_ALLOC_STRESS_THRESHOLD_PER_SCOPE;
-            case simulation_mode::relaxed: return cfg::sim::TLS_ALLOC_RELAXED_THRESHOLD_PER_SCOPE;
+            case simulation_mode::stress: 
+                return cfg::sim::TLS_ALLOC_STRESS_THRESHOLD_PER_SCOPE;
+            case simulation_mode::relaxed: 
+                return cfg::sim::TLS_ALLOC_RELAXED_THRESHOLD_PER_SCOPE / thread_count;
         }
         std::unreachable();
     }
