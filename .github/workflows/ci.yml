@@ -1,0 +1,31 @@
+name: GCSim CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v5
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang make libgtest-dev cmake
+
+          cd /usr/src/gtest
+          sudo cmake -B build
+          sudo cmake --build build
+          sudo cp build/lib/*.a /usr/lib
+
+      - name: Build simulator
+        run: make -j$(nproc)
+
+      - name: Build and run tests
+        run: make test

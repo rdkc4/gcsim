@@ -280,7 +280,7 @@ void mc_garbage_collector::compact(heap& heap_memory, segment_free_memory_table&
 
     std::latch completion_latch{ cfg::heap::TOTAL_SEGMENTS };
 
-    auto enqueue_segment_compact = 
+    auto enqueue_segment_compact{ 
         [this, &completion_latch](segment& segment, segment_info* seg_info) -> void {
             gc_thread_pool.enqueue(
                 [this, seg = &segment, seg_info, &completion_latch] -> void {
@@ -288,6 +288,7 @@ void mc_garbage_collector::compact(heap& heap_memory, segment_free_memory_table&
                     completion_latch.count_down();
                 }
             );
+        }
     };
 
     size_t absolute_idx{0};

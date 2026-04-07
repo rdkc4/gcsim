@@ -2,7 +2,7 @@
 
 ## Overview
 
-Mark-Sweep GC simulator written in C++23. 
+Heap manager simulator using mark-sweep and mark-compact garbage collectors, written in C++23.
 
 ## Documentation
 

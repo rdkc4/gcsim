@@ -36,11 +36,11 @@ public:
      * @brief pushes an element on the stack.
      * @param value - const reference to an element that is being pushed.
      * @returns pointer to the element.
-     * @throws overflow_error if stack is full.
+     * @throws out_of_range if stack is full.
     */
     T* push(const T& value){
         if(top >= capacity){
-            throw std::overflow_error("fixed_stack overflow");
+            throw std::out_of_range("Stack is full, cannot push");
         }
         data[top] = value;
         return &data[top++];
@@ -50,11 +50,11 @@ public:
      * @brief pushes an element on the stack.
      * @param value - element that is being pushed.
      * @returns pointer to the element.
-     * @throws overflow_error if stack is full.
+     * @throws out_of_range if stack is full.
     */
     T* push(T&& value) {
         if(top >= capacity){
-            throw std::overflow_error("fixed_stack overflow");
+            throw std::out_of_range("Stack is full, cannot push");
         }
         data[top] = std::move(value);
         return &data[top++];
@@ -62,11 +62,11 @@ public:
 
     /**
      * @brief pops the element off the stack.
-     * @throws undeflow_error if the stack is empty.
+     * @throws out_of_range if the stack is empty.
     */
     void pop(){
         if(top == 0){
-            throw std::underflow_error("fixed_stack underflow");
+            throw std::out_of_range("Cannot pop from an empty stack");
         }
         --top;
     }
@@ -83,8 +83,12 @@ public:
      * @brief operator for direct access.
      * @param i - index on the stack.
      * @returns reference to an element on the stack at given index.
+     * @throws std::out_of_range when index is bigger than top.
     */
-    T& operator[](size_t i) noexcept {
+    T& operator[](size_t i){
+        if(i >= top){
+            throw std::out_of_range("Index out of range");
+        }
         return data[i];
     }
 
@@ -92,8 +96,12 @@ public:
      * @brief operator for direct access.
      * @param i - index on the stack.
      * @returns const reference to an element on the stack at given index.
+     * @throws std::out_of_range when index is bigger than top.
     */
-    const T& operator[](size_t i) const noexcept {
+    const T& operator[](size_t i) const {
+        if(i >= top){
+            throw std::out_of_range("Index out of range");
+        }
         return data[i];
     }
 

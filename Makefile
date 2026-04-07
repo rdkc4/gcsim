@@ -33,7 +33,15 @@ SRCS = main.cpp \
 OBJS = $(SRCS:.cpp=.o)
 EXEC = gcsim
 
-.PHONY: all clean distclean perf benchmark run
+TEST_SRCS = $(shell find unit-tests -name '*.cpp')
+TEST_OBJS = $(TEST_SRCS:.cpp=.o)
+TEST_EXEC = run_tests
+
+GTEST_LIBS = -lgtest -lgtest_main -pthread
+
+TEST_DEPS = $(filter-out main.o, $(OBJS))
+
+.PHONY: all clean distclean perf benchmark run test
 
 all: $(EXEC)
 
@@ -45,6 +53,12 @@ $(EXEC): $(OBJS)
 
 run: $(EXEC)
 	./$(EXEC)
+
+test: $(TEST_EXEC)
+	./$(TEST_EXEC)
+
+$(TEST_EXEC): $(TEST_OBJS) $(TEST_DEPS)
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(SANITIZERS) $(GTEST_LIBS)
 
 perf: CXXFLAGS := $(PERFCXXFLAGS)
 perf: SANITIZERS :=

@@ -130,7 +130,7 @@ void ms_garbage_collector::sweep_and_coalesce_segment(segment& seg, segment_info
                 free_list_head = hdr;
             }
             free_list_tail = hdr;
-            free_bytes += hdr->size + static_cast<uint32_t>(sizeof(header));
+            free_bytes += hdr->size;
         }
 
         current_ptr = current_ptr + sizeof(header) + static_cast<size_t>(hdr->size);
