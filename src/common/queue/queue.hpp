@@ -79,7 +79,9 @@ public:
     template<typename TT>
     requires std::is_constructible_v<T, TT&&>
     void push(TT&& value){
-        queue_entry* new_element = static_cast<queue_entry*>(::operator new(sizeof(queue_entry)));
+        queue_entry* new_element{ 
+            static_cast<queue_entry*>(::operator new(sizeof(queue_entry))) 
+        };
         try {
             new (new_element) queue_entry(std::forward<TT>(value));
         } catch (...) {
@@ -107,7 +109,7 @@ public:
             throw std::out_of_range("Queue is empty");
         }
 
-        queue_entry* old_head = head;
+        queue_entry* old_head{ head };
         T value = std::move(old_head->value);
         
         head = head->next;
@@ -167,7 +169,7 @@ public:
     */
     void clear() {
         while (head) {
-            queue_entry* tmp = head;
+            queue_entry* tmp{ head };
             head = head->next;
             tmp->~queue_entry();
             ::operator delete(tmp);

@@ -39,7 +39,7 @@ private:
     */
     template<typename Fn>
     void for_each_variable(Fn&& fn) {
-        for(size_t i = 0; i < tls.get_size(); ++i){
+        for(size_t i{0}; i < tls.get_size(); ++i){
             auto& entry{ tls[i] };
 
             if(entry.ref_to){
@@ -55,7 +55,7 @@ private:
     */
     template<typename Fn>
     void for_each_temp_variable(Fn&& fn) {
-        for(size_t i = 0; i < temporaries.get_size(); ++i){
+        for(size_t i{0}; i < temporaries.get_size(); ++i){
             auto& temp{ temporaries[i] };
 
             if(temp){

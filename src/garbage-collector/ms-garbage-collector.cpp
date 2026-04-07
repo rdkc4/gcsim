@@ -22,13 +22,13 @@ void ms_garbage_collector::mark_object(header* hdr) noexcept {
     refs.push(hdr);
     
     while(!refs.empty()) {
-        header* current = refs.peek();
+        header* current{ refs.peek() };
         refs.pop();
         
         if(!current->try_mark()) continue;
         
         current->trace_refs([&refs](header** ref_slot) -> void {
-            if(header* ref = *ref_slot) {
+            if(header* ref{ *ref_slot }) {
                 refs.push(ref);
             }
         });
@@ -54,18 +54,18 @@ void ms_garbage_collector::visit(shared_register_space& reg){
 }
 
 void ms_garbage_collector::mark(root_set_table& root_set) noexcept {
-    const size_t total = root_set.get_root_count();
+    const size_t total{ root_set.get_root_count() };
     if(total == 0) return;
 
     std::latch completion_latch{ static_cast<std::ptrdiff_t>(total) };
 
-    auto& roots_table = root_set.get_roots();
-    auto** buckets = roots_table.get_buckets();
-    const size_t capacity = roots_table.get_capacity();
+    auto& roots_table{ root_set.get_roots() };
+    auto** buckets{ roots_table.get_buckets() };
+    const size_t capacity{ roots_table.get_capacity() };
 
-    for(size_t i = 0; i < capacity; ++i) {
-        for(auto* root = buckets[i]; root; root = root->next){
-            auto* root_obj = root->value;
+    for(size_t i{0}; i < capacity; ++i) {
+        for(auto* root{ buckets[i] }; root; root = root->next){
+            auto* root_obj{ root->value };
             gc_thread_pool.enqueue(
                 [this, root_obj, &completion_latch] -> void {
                     if(root_obj){
@@ -83,16 +83,16 @@ void ms_garbage_collector::mark(root_set_table& root_set) noexcept {
 void ms_garbage_collector::sweep_and_coalesce_segment(segment& seg, segment_info* seg_info) noexcept {
     assert(seg_info != nullptr);
 
-    uint8_t* current_ptr = seg.segment_memory;
-    const uint8_t* end_ptr = current_ptr + cfg::heap::SEGMENT_SIZE;
+    uint8_t* current_ptr{ seg.segment_memory };
+    const uint8_t* end_ptr{ current_ptr + cfg::heap::SEGMENT_SIZE };
 
-    header* free_list_head = nullptr;
-    header* free_list_tail = nullptr;
+    header* free_list_head{nullptr};
+    header* free_list_tail{nullptr};
 
-    uint32_t free_bytes = 0;
+    uint32_t free_bytes{0};
 
     while(current_ptr + sizeof(header) <= end_ptr){
-        header* hdr = reinterpret_cast<header*>(current_ptr);
+        header* hdr{ reinterpret_cast<header*>(current_ptr) };
         if(current_ptr + sizeof(header) + static_cast<size_t>(hdr->size) > end_ptr) [[unlikely]] {
             break;
         }
@@ -105,9 +105,9 @@ void ms_garbage_collector::sweep_and_coalesce_segment(segment& seg, segment_info
         else {
             hdr->set_free(true);
             
-            uint8_t* next_ptr = current_ptr + sizeof(header) + static_cast<size_t>(hdr->size);
+            uint8_t* next_ptr{ current_ptr + sizeof(header) + static_cast<size_t>(hdr->size) };
             while(next_ptr + sizeof(header) <= end_ptr){
-                header* next_hdr = reinterpret_cast<header*>(next_ptr);
+                header* next_hdr{ reinterpret_cast<header*>(next_ptr) };
 
                 if(next_ptr + sizeof(header) + static_cast<size_t>(next_hdr->size) > end_ptr) [[unlikely]] {
                     break;
@@ -145,26 +145,37 @@ void ms_garbage_collector::sweep(heap& heap_memory, segment_free_memory_table& f
     
     std::latch completion_latch{ cfg::heap::TOTAL_SEGMENTS };
 
-    auto enqueue_segment_sweep = [this, &free_memory_table, &completion_latch](segment& segment, size_t absolute_idx) -> void {
-        gc_thread_pool.enqueue(
-            [this, seg = &segment, absolute_idx, &free_memory_table, &completion_latch] -> void {
-                sweep_and_coalesce_segment(*seg, free_memory_table.get_segment_info(absolute_idx));
-                completion_latch.count_down();
-            }
-        );
+    auto enqueue_segment_sweep{ 
+        [this, &completion_latch](segment& segment, segment_info* seg_info) -> void {
+            gc_thread_pool.enqueue(
+                [this, seg = &segment, seg_info, &completion_latch] -> void {
+                    sweep_and_coalesce_segment(*seg, seg_info);
+                    completion_latch.count_down();
+                }
+            );
+        }
     };
 
-    size_t absolute_idx = 0;
-    for(size_t i = 0; i < cfg::heap::SMALL_OBJECT_SEGMENTS; ++i) {
-        enqueue_segment_sweep(heap_memory.get_small_object_segment(i), absolute_idx++);
+    size_t absolute_idx{0};
+    for(size_t i{0}; i < cfg::heap::SMALL_OBJECT_SEGMENTS; ++i) {
+        enqueue_segment_sweep(
+            heap_memory.get_small_object_segment(i), 
+            free_memory_table.get_segment_info(absolute_idx++)
+        );
     }
 
-    for(size_t i = 0; i < cfg::heap::MEDIUM_OBJECT_SEGMENTS; ++i) {
-        enqueue_segment_sweep(heap_memory.get_medium_object_segment(i), absolute_idx++);
+    for(size_t i{0}; i < cfg::heap::MEDIUM_OBJECT_SEGMENTS; ++i) {
+        enqueue_segment_sweep(
+            heap_memory.get_medium_object_segment(i),
+            free_memory_table.get_segment_info(absolute_idx++)
+        );
     }
 
-    for(size_t i = 0; i < cfg::heap::LARGE_OBJECT_SEGMENTS; ++i) {
-        enqueue_segment_sweep(heap_memory.get_large_object_segment(i), absolute_idx++);
+    for(size_t i{0}; i < cfg::heap::LARGE_OBJECT_SEGMENTS; ++i) {
+        enqueue_segment_sweep(
+            heap_memory.get_large_object_segment(i), 
+            free_memory_table.get_segment_info(absolute_idx++)
+        );
     }
 
     completion_latch.wait();

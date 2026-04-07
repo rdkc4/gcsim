@@ -45,19 +45,21 @@ int main(int argc, char** argv){
         }
     }
 
-    auto heap_mng = [&options]() -> std::unique_ptr<heap_manager> {
-        if (options.gc_type == garbage_collector_type::mark_sweep) {
-            return std::make_unique<heap_manager>(
-                std::in_place_type<ms_garbage_collector>,
-                cfg::threads::GC_THREAD_COUNT
-            );
-        } else {
-            return std::make_unique<heap_manager>(
-                std::in_place_type<mc_garbage_collector>,
-                cfg::threads::GC_THREAD_COUNT
-            );
-        }
-    }();
+    auto heap_mng{ 
+        [&options]() -> std::unique_ptr<heap_manager> {
+            if (options.gc_type == garbage_collector_type::mark_sweep) {
+                return std::make_unique<heap_manager>(
+                    std::in_place_type<ms_garbage_collector>,
+                    cfg::threads::GC_THREAD_COUNT
+                );
+            } else {
+                return std::make_unique<heap_manager>(
+                    std::in_place_type<mc_garbage_collector>,
+                    cfg::threads::GC_THREAD_COUNT
+                );
+            }
+        }() 
+    };
 
     diagnoser diagnoser{ options };
 

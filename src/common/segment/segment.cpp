@@ -10,15 +10,12 @@
 #include "../cfg/heap-cfg.hpp"
 
 segment::segment() 
-    : segment_memory(
-        static_cast<uint8_t*>(
-            ::operator new(cfg::heap::SEGMENT_SIZE, std::align_val_t{alignof(std::max_align_t)})
-        )
-    )
-{
-     std::memset(segment_memory, 0, cfg::heap::SEGMENT_SIZE);
-    initialize();
-}
+    : segment_memory(static_cast<uint8_t*>(
+        ::operator new(cfg::heap::SEGMENT_SIZE, std::align_val_t{alignof(std::max_align_t)})
+    )){
+        std::memset(segment_memory, 0, cfg::heap::SEGMENT_SIZE);
+        initialize();
+    }
 
 segment::~segment() {
     ::operator delete(segment_memory, std::align_val_t{alignof(std::max_align_t)});
@@ -38,7 +35,7 @@ segment& segment::operator=(segment&& other) noexcept {
 }
 
 void segment::initialize() {
-    header* hdr = new (segment_memory) header{};
+    header* hdr{ new (segment_memory) header{} };
     hdr->size = cfg::heap::SEGMENT_SIZE - sizeof(header);
     free_memory = hdr->size;
 }

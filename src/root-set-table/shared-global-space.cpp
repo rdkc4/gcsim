@@ -20,7 +20,7 @@ void shared_global_space::allocate(header* heap_ptr){
 void shared_global_space::reallocate_random(header* heap_ptr){
     std::lock_guard<std::mutex> global_space_lock{ global_space_mtx };
     
-    const size_t size = global_variables.get_size();
+    const size_t size{ global_variables.get_size() };
     if(size == 0) {
         allocate_internal(heap_ptr);
         return;

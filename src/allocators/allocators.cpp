@@ -71,7 +71,7 @@ void allocators::simulate_thread_alloc(thread_local_stack* tls, size_t scope_cou
     for(size_t scope{0}; scope < scope_count; ++scope){
         tls->push_scope();
 
-        for(size_t i = 0; i < allocs_per_scope; ++i){
+        for(size_t i{0}; i < allocs_per_scope; ++i){
             header* obj{ allocate_object(tls) };
 
             simulation_operation sim_op{ static_cast<simulation_operation>(rng::sim::generate_simulation_operation()) };

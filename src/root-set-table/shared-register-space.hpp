@@ -54,7 +54,7 @@ public:
     */
     template<typename Fn>
     void for_each(Fn&& fn){
-        for (size_t i = 0; i < registers.get_size(); ++i){
+        for (size_t i{0}; i < registers.get_size(); ++i){
             auto& entry{ registers[i] };
 
             if(entry){

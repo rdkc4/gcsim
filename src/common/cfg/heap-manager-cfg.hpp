@@ -12,22 +12,24 @@
 */
 namespace cfg::heap_manager {
     /// max size of the small object.
-    constexpr uint32_t SMALL_OBJECT_THRESHOLD = 256; //<256B
+    constexpr uint32_t SMALL_OBJECT_THRESHOLD{256}; //<256B
 
     /// max size of the medium object.
-    constexpr uint32_t MEDIUM_OBJECT_THRESHOLD = 2 * 1024; //<2kB
+    constexpr uint32_t MEDIUM_OBJECT_THRESHOLD{ 2 * 1024 }; //<2kB
 
     /// max size of the large object.
-    constexpr uint32_t LARGE_OBJECT_THRESHOLD = 256 * 1024; //<256kB
+    constexpr uint32_t LARGE_OBJECT_THRESHOLD{ 256 * 1024 }; //<256kB
 
     /// min interval between two gc calls.
-    constexpr int64_t MIN_INTERVAL = 100; //<100ms
+    constexpr int64_t MIN_INTERVAL{100}; //<100ms
 
     /// interval between two automatic gc calls.
-    constexpr int64_t PERIODIC_INTERVAL = 1000; //<1000ms
+    constexpr int64_t PERIODIC_INTERVAL{1000}; //<1000ms
 
     /// trigger for gc when free memory on the heap is low.
-    constexpr uint32_t GC_LOW_MEMORY_THRESHOLD = heap::TOTAL_SEGMENTS * heap::SEGMENT_SIZE / 10;
+    constexpr uint32_t GC_LOW_MEMORY_THRESHOLD{ 
+        heap::TOTAL_SEGMENTS * heap::SEGMENT_SIZE / 10 
+    };
 
     /// min interval between gc calls.
     constexpr std::chrono::milliseconds MIN_GC_INTERVAL{MIN_INTERVAL};

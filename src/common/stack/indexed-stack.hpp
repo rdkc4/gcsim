@@ -34,7 +34,7 @@ private:
     */
     void delete_range(size_t start, size_t end) noexcept {
         assert(start <= end && end <= size);
-        for(size_t i = start; i < end; ++i){
+        for(size_t i{start}; i < end; ++i){
             data[i].~T();
         }
     }
@@ -49,16 +49,16 @@ private:
         if(new_capacity < cfg::structs::indexed_stack::DEFAULT_STACK_CAPACITY){
             throw std::invalid_argument("Invalid capacity");
         }
-        T* new_data = static_cast<T*>(::operator new(sizeof(T) * new_capacity));
+        T* new_data{ static_cast<T*>(::operator new(sizeof(T) * new_capacity)) };
         
-        size_t i = 0;
+        size_t i{0};
         try {
             for(; i < size; ++i){
                 new (new_data + i) T(std::move(data[i]));
             }
         } 
         catch (...) {
-            for(size_t j = 0; j < i; ++j){
+            for(size_t j{0}; j < i; ++j){
                 new_data[j].~T();
             }
             ::operator delete(new_data);

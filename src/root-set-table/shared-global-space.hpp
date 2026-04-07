@@ -69,7 +69,7 @@ public:
     */
     template<typename Fn>
     void for_each(Fn&& fn){
-        for(size_t i = 0; i < global_variables.get_size(); ++i){
+        for(size_t i{0}; i < global_variables.get_size(); ++i){
             auto& entry{ global_variables[i] };
 
             if(entry){

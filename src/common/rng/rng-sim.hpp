@@ -12,13 +12,13 @@
 */
 namespace rng::sim {
     /// probability for object to be small.
-    constexpr uint32_t SMALL_OBJECT_PROBABILITY = 90;
+    constexpr uint32_t SMALL_OBJECT_PROBABILITY{90};
 
     /// probability for object to be medium. 
-    constexpr uint32_t MEDIUM_OBJECT_PROBABILITY = 8;
+    constexpr uint32_t MEDIUM_OBJECT_PROBABILITY{8};
 
     /// probability for object to be large.
-    constexpr uint32_t LARGE_OBJECT_PROBABILITY = 2;
+    constexpr uint32_t LARGE_OBJECT_PROBABILITY{2};
 
     /**
      * @struct object_probability_t
@@ -44,32 +44,42 @@ namespace rng::sim {
 
 
     /// min generated number for small object distribution.
-    constexpr uint32_t MIN_SMALL_OBJECT_DISTRIBUTION = 1;
+    constexpr uint32_t MIN_SMALL_OBJECT_DISTRIBUTION{1};
 
     /// max generated number for small object distribution.
-    constexpr uint32_t MAX_SMALL_OBJECT_DISTRIBUTION = cfg::heap_manager::SMALL_OBJECT_THRESHOLD;
+    constexpr uint32_t MAX_SMALL_OBJECT_DISTRIBUTION{ 
+        cfg::heap_manager::SMALL_OBJECT_THRESHOLD 
+    };
 
     /// min generated number for medium object distribution.
-    constexpr uint32_t MIN_MEDIUM_OBJECT_DISTRIBUTION = cfg::heap_manager::SMALL_OBJECT_THRESHOLD + 1;
+    constexpr uint32_t MIN_MEDIUM_OBJECT_DISTRIBUTION{ 
+        cfg::heap_manager::SMALL_OBJECT_THRESHOLD + 1
+    };
 
     /// max generated number for medium object distribution.
-    constexpr uint32_t MAX_MEDIUM_OBJECT_DISTRIBUTION = cfg::heap_manager::MEDIUM_OBJECT_THRESHOLD;
+    constexpr uint32_t MAX_MEDIUM_OBJECT_DISTRIBUTION{ 
+        cfg::heap_manager::MEDIUM_OBJECT_THRESHOLD 
+    };
 
     /// min generated number for large object distribution.
-    constexpr uint32_t MIN_LARGE_OBJECT_DISTRIBUTION = cfg::heap_manager::MEDIUM_OBJECT_THRESHOLD + 1;
+    constexpr uint32_t MIN_LARGE_OBJECT_DISTRIBUTION{ 
+        cfg::heap_manager::MEDIUM_OBJECT_THRESHOLD + 1 
+    };
 
     /// max generated number for large object distribution.
-    constexpr uint32_t MAX_LARGE_OBJECT_DISTRIBUTION = cfg::heap_manager::LARGE_OBJECT_THRESHOLD;
+    constexpr uint32_t MAX_LARGE_OBJECT_DISTRIBUTION{ 
+        cfg::heap_manager::LARGE_OBJECT_THRESHOLD
+    };
 
 
     /// probability of object having no references.
-    constexpr uint64_t NO_REF_PROBABILITY = 80;
+    constexpr uint64_t NO_REF_PROBABILITY{80};
 
     /// probability of object having one reference.
-    constexpr uint64_t ONE_REF_PROBABILITY = 15;
+    constexpr uint64_t ONE_REF_PROBABILITY{15};
 
     /// probability of object having two references.
-    constexpr uint64_t TWO_REF_PROBABILITY = 5;
+    constexpr uint64_t TWO_REF_PROBABILITY{5};
 
     /**
      * @struct ref_probability_t
@@ -94,16 +104,16 @@ namespace rng::sim {
     };
 
     /// probability that operation will be tls allocation.
-    constexpr uint32_t TLS_ALLOC_PROBABILITY = 90;
+    constexpr uint32_t TLS_ALLOC_PROBABILITY{90};
 
     /// probability that operation will be global allocation.
-    constexpr uint32_t GLOBAL_ALLOC_PROBABILITY = 4;
+    constexpr uint32_t GLOBAL_ALLOC_PROBABILITY{4};
 
     /// probability that operation will be global reallocation.
-    constexpr uint32_t GLOBAL_REALLOC_PROBABILITY = 2;
+    constexpr uint32_t GLOBAL_REALLOC_PROBABILITY{2};
 
     /// probability that operation will be register reallocation.
-    constexpr uint32_t REGISTER_REALLOC_PROBABILITY = 4;
+    constexpr uint32_t REGISTER_REALLOC_PROBABILITY{4};
 
     /**
      * @struct operation_probability_t

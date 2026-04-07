@@ -11,12 +11,12 @@ void root_set_table::remove_root(uint64_t id) {
 }
 
 root_set_base* root_set_table::get_root(uint64_t id) noexcept {
-    auto* entry = roots.find(id);
+    auto* entry{ roots.find(id) };
     return entry ? *entry : nullptr;
 }
 
 const root_set_base* root_set_table::get_root(uint64_t id) const noexcept {
-    const auto* entry = roots.find(id);
+    const auto* entry{ roots.find(id) };
     return entry ? *entry : nullptr;
 }
 

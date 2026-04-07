@@ -9,7 +9,7 @@
 */
 namespace cfg::threads {
     /// number of thread of the garbage collector's thread pool.
-    constexpr size_t GC_THREAD_COUNT = 8;
+    constexpr size_t GC_THREAD_COUNT{8};
 
 };
 

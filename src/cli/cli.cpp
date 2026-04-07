@@ -79,11 +79,13 @@ namespace cli {
     void handle_iteration_arg(cli_options& options, std::string_view iteration_arg){
         int iterations{};
 
-        auto result = std::from_chars(
-            iteration_arg.data(),
-            iteration_arg.data() + iteration_arg.size(),
-            iterations
-        );
+        auto result{ 
+            std::from_chars(
+                iteration_arg.data(),
+                iteration_arg.data() + iteration_arg.size(),
+                iterations
+            )
+        };
         
         if(result.ec == std::errc() && iterations > 0){
             options.iterations = static_cast<size_t>(iterations);
@@ -98,11 +100,13 @@ namespace cli {
     void handle_mutator_arg(cli_options& options, std::string_view mutator_arg){
         int mutators{};
 
-        auto [ptr, ec] = std::from_chars(
-            mutator_arg.data(),
-            mutator_arg.data() + mutator_arg.size(),
-            mutators
-        );
+        auto [ptr, ec]{ 
+            std::from_chars(
+                mutator_arg.data(),
+                mutator_arg.data() + mutator_arg.size(),
+                mutators
+            )
+        };
         
         if(ec == std::errc() && mutators > 0 && mutators <= 10){
             options.mutators = static_cast<size_t>(mutators);

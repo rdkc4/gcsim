@@ -49,7 +49,7 @@ private:
     */
     void delete_entries_from_bucket(map_entry* head) noexcept {
         while(head){
-            map_entry* temp = head;
+            map_entry* temp{head};
             head = head->next;
             delete temp;
         }
@@ -59,7 +59,7 @@ private:
      * @brief frees all entries from each bucket.
     */
     void clear_buckets() noexcept {
-        for(size_t i = 0; i < capacity; ++i){
+        for(size_t i{0}; i < capacity; ++i){
             delete_entries_from_bucket(buckets[i]);
         }
     }
@@ -77,18 +77,22 @@ private:
      * @details doubles the capacity and redistributes all entries.
     */
     void resize(){
-        size_t new_capacity = capacity * 2;
-        map_entry** new_buckets = static_cast<map_entry**>(::operator new (sizeof(map_entry*) * new_capacity));
+        size_t new_capacity{ capacity * 2 };
+        map_entry** new_buckets{ 
+            static_cast<map_entry**>(
+                ::operator new (sizeof(map_entry*) * new_capacity)
+            )
+        };
 
-        for(size_t i = 0; i < new_capacity; ++i){
+        for(size_t i{0}; i < new_capacity; ++i){
             new_buckets[i] = nullptr;
         }
 
-        for(size_t i = 0; i < capacity; ++i){
-            map_entry* current = buckets[i];
+        for(size_t i{0}; i < capacity; ++i){
+            map_entry* current{ buckets[i] };
             while(current){
-                map_entry* next = current->next;
-                size_t new_bucket_index = hash_function(current->key) % new_capacity;
+                map_entry* next{ current->next };
+                size_t new_bucket_index{ hash_function(current->key) % new_capacity };
             
                 current->next = new_buckets[new_bucket_index];
                 new_buckets[new_bucket_index] = current;
@@ -116,7 +120,7 @@ public:
         size(0),
         capacity(cfg::structs::hash_map::DEFAULT_MAP_CAPACITY) {
             
-        for(size_t i = 0; i < capacity; ++i){
+        for(size_t i{0}; i < capacity; ++i){
             buckets[i] = nullptr;
         }
     }
@@ -138,7 +142,7 @@ public:
             throw std::invalid_argument("Invalid hash map capacity");
         }
 
-        for(size_t i = 0; i < capacity; ++i){
+        for(size_t i{0}; i < capacity; ++i){
             buckets[i] = nullptr;
         }
     }    
@@ -194,8 +198,8 @@ public:
     template<typename KK, typename VV>
     requires std::is_constructible_v<K, KK&&> && std::is_constructible_v<V, VV&&>
     void insert(KK&& key, VV&& value) {
-        size_t bucket_idx = calculate_bucket(key);
-        map_entry* current = buckets[bucket_idx];
+        size_t bucket_idx{ calculate_bucket(key) };
+        map_entry* current{ buckets[bucket_idx] };
 
         while(current){
             if(current->key == key){
@@ -205,7 +209,9 @@ public:
             current = current->next;
         }
 
-        map_entry* new_entry = new hash_map_entry(std::forward<KK>(key), std::forward<VV>(value));
+        map_entry* new_entry{ 
+            new hash_map_entry(std::forward<KK>(key), std::forward<VV>(value)) 
+        };
         new_entry->next = buckets[bucket_idx];
         buckets[bucket_idx] = new_entry;
         ++size;
@@ -225,8 +231,8 @@ public:
     template<typename KK, typename... VVArgs>
     requires std::is_constructible_v<K, KK&&> && std::is_constructible_v<V, VVArgs&&...>
     void emplace(KK&& key, VVArgs&&... value_args) {
-        size_t bucket_idx = calculate_bucket(key);
-        map_entry* current = buckets[bucket_idx];
+        size_t bucket_idx{ calculate_bucket(key) };
+        map_entry* current{ buckets[bucket_idx] };
 
         while(current){
             if(current->key == key){
@@ -237,10 +243,12 @@ public:
             current = current->next;
         }
 
-        map_entry* new_entry = new hash_map_entry<K, V>(
-            std::forward<KK>(key),
-            std::forward<VVArgs>(value_args)...
-        );
+        map_entry* new_entry{ 
+            new hash_map_entry<K, V>(
+                std::forward<KK>(key),
+                std::forward<VVArgs>(value_args)...
+            )
+        };
 
         new_entry->next = buckets[bucket_idx];
         buckets[bucket_idx] = new_entry;
@@ -257,8 +265,8 @@ public:
      * @returns pointer to the value associated with the key; nullptr if not found.
     */
     V* find(const K& key) noexcept {
-        size_t bucket_idx = calculate_bucket(key);
-        map_entry* current = buckets[bucket_idx];
+        size_t bucket_idx{ calculate_bucket(key) };
+        map_entry* current{ buckets[bucket_idx] };
 
         while(current) {
             if(current->key == key){
@@ -275,8 +283,8 @@ public:
      * @returns const pointer to the value associated with the key; nullptr if not found.
     */
     const V* find(const K& key) const noexcept {
-        size_t bucket_idx = calculate_bucket(key);
-        map_entry* current = buckets[bucket_idx];
+        size_t bucket_idx{ calculate_bucket(key) };
+        map_entry* current{ buckets[bucket_idx] };
 
         while(current){
             if(current->key == key){
@@ -293,9 +301,9 @@ public:
      * @returns true if element was erased; false otherwise.
     */
     bool erase(const K& key){
-        size_t bucket_idx = calculate_bucket(key);
-        map_entry* current = buckets[bucket_idx];
-        map_entry* previous = nullptr;
+        size_t bucket_idx{ calculate_bucket(key) };
+        map_entry* current{ buckets[bucket_idx] };
+        map_entry* previous{nullptr};
 
         while(current){
             if(current->key == key){
@@ -331,7 +339,7 @@ public:
      * @throws std::out_of_range if key doesn't exist.
     */
     V& operator[](const K& key){
-        V* value = find(key);
+        V* value{ find(key) };
         if(!value){
             throw std::out_of_range("Key not found");
         }
@@ -345,7 +353,7 @@ public:
      * @throws std::out_of_range if key doesn't exist.
     */
     const V& operator[](const K& key) const {
-        const V* value = find(key);
+        const V* value{ find(key) };
         if(!value){
             throw std::out_of_range("Key not found");
         }
@@ -389,7 +397,7 @@ public:
     */
     void clear() {
         clear_buckets();
-        for(size_t i = 0; i < capacity; ++i){
+        for(size_t i{0}; i < capacity; ++i){
             buckets[i] = nullptr;
         }
         size = 0;

@@ -27,9 +27,9 @@ namespace core::identity {
      * @brief type of the variable.
     */
     enum class type : uint64_t {
-        global_t = 1,
-        thread_local_t = 2,
-        register_t = 3
+        global_t = 1,        //< prefix of the global root id.
+        thread_local_t = 2,  //< prefix of the thread root id.
+        register_t = 3       //< prefix of the register root id.
     };
 
     /**
@@ -39,7 +39,7 @@ namespace core::identity {
      * @details identity = [type: 8b][counter: 56b]
     */
     [[nodiscard]] inline uint64_t generate_identity(type t) noexcept {
-        uint64_t counter = 0;
+        uint64_t counter{0};
         switch(t){
             case type::global_t:
                 counter = global_root_counter.fetch_add(1);

@@ -4,9 +4,9 @@
 #include "../common/cfg/heap-manager-cfg.hpp"
 
 void heap_manager::init_free_memory(){
-    for(size_t i = 0; i < cfg::heap::SMALL_OBJECT_SEGMENTS; ++i) {
-        segment& segment = heap_memory.get_small_object_segment(i);
-        header* initial_header = reinterpret_cast<header*>(segment.segment_memory);
+    for(size_t i{0}; i < cfg::heap::SMALL_OBJECT_SEGMENTS; ++i) {
+        segment& segment{ heap_memory.get_small_object_segment(i) };
+        header* initial_header{ reinterpret_cast<header*>(segment.segment_memory) };
         free_memory_table.update_segment(
             i, 
             initial_header, 
@@ -14,9 +14,9 @@ void heap_manager::init_free_memory(){
         );
     }
 
-    for(size_t i = 0; i < cfg::heap::MEDIUM_OBJECT_SEGMENTS; ++i) {
-        segment& segment = heap_memory.get_medium_object_segment(i);
-        header* initial_header = reinterpret_cast<header*>(segment.segment_memory);
+    for(size_t i{0}; i < cfg::heap::MEDIUM_OBJECT_SEGMENTS; ++i) {
+        segment& segment{ heap_memory.get_medium_object_segment(i) };
+        header* initial_header{ reinterpret_cast<header*>(segment.segment_memory) };
         free_memory_table.update_segment(
             cfg::heap::SMALL_OBJECT_SEGMENTS + i, 
             initial_header, 
@@ -24,9 +24,9 @@ void heap_manager::init_free_memory(){
         );
     }
 
-    for(size_t i = 0; i < cfg::heap::LARGE_OBJECT_SEGMENTS; ++i) {
-        segment& segment = heap_memory.get_large_object_segment(i);
-        header* initial_header = reinterpret_cast<header*>(segment.segment_memory);
+    for(size_t i{0}; i < cfg::heap::LARGE_OBJECT_SEGMENTS; ++i) {
+        segment& segment{ heap_memory.get_large_object_segment(i) };
+        header* initial_header{ reinterpret_cast<header*>(segment.segment_memory) };
         free_memory_table.update_segment(
             cfg::heap::SMALL_OBJECT_SEGMENTS + cfg::heap::MEDIUM_OBJECT_SEGMENTS + i, 
             initial_header, 
@@ -51,17 +51,18 @@ header* heap_manager::allocate(uint32_t bytes){
     safepoint_poll();
 
     if(bytes == 0) return nullptr;
-    bytes = (bytes + cfg::heap::SEGMENT_ALIGNMENT - 1) & ~(cfg::heap::SEGMENT_ALIGNMENT - 1);
+    bytes = (bytes + cfg::heap::SEGMENT_ALIGNMENT - 1) & 
+        ~(cfg::heap::SEGMENT_ALIGNMENT - 1);
 
-    int segment_index = find_suitable_segment(bytes);
+    int segment_index{ find_suitable_segment(bytes) };
     if(segment_index >= 0){
         std::lock_guard<std::mutex> seg_lock(segment_locks[segment_index]);
-        if(header* obj = allocate_from_segment(static_cast<size_t>(segment_index), bytes))
+        if(header* obj{ allocate_from_segment(static_cast<size_t>(segment_index), bytes) })
             return obj;
     }
     
     if(should_run_gc()){
-        bool expected = false;
+        bool expected{false};
         if(gc_in_progress.compare_exchange_strong(expected, true, std::memory_order_acq_rel)){
             collect_garbage(true); //< gc is being called by mutator.
         }
@@ -97,7 +98,7 @@ void heap_manager::clear_roots() noexcept {
 void heap_manager::collect_garbage(bool called_by_mutator){
     stw_requested.store(true, std::memory_order_release);
 
-    size_t expected_parked = mutator_count.load(std::memory_order_acquire);
+    size_t expected_parked{ mutator_count.load(std::memory_order_acquire) };
     if(called_by_mutator && expected_parked > 0){
         --expected_parked;
     }
@@ -130,10 +131,12 @@ void heap_manager::collect_garbage(bool called_by_mutator){
 }
 
 bool heap_manager::should_run_gc() const noexcept {
-    auto now_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::high_resolution_clock::now().time_since_epoch()
-    ).count();
-    auto last_ms = last_gc_time_ms.load(std::memory_order_acquire);
+    auto now_ms{ 
+        std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::high_resolution_clock::now().time_since_epoch()
+        ).count()
+    };
+    auto last_ms{ last_gc_time_ms.load(std::memory_order_acquire) };
 
     /// time-based gc trigger.
     if((now_ms - last_ms) >= cfg::heap_manager::MIN_GC_INTERVAL.count()){
@@ -162,7 +165,7 @@ void heap_manager::periodic_gc_loop(std::stop_token stop_token){
 
         if(!should_run_gc()) continue;
 
-        bool expected = false;
+        bool expected{false};
         if(gc_in_progress.compare_exchange_strong(expected, true, std::memory_order_acq_rel)){
             collect_garbage();
         }
@@ -172,8 +175,8 @@ void heap_manager::periodic_gc_loop(std::stop_token stop_token){
 int heap_manager::find_suitable_segment(uint32_t bytes) noexcept {
     size_t start_idx{}, end_idx{};
     std::atomic<size_t>* last_segment_idx;
-    int fallback_segment_idx = -1;
-    uint32_t fallback_segment_size = 0;
+    int fallback_segment_idx{-1};
+    uint32_t fallback_segment_size{0};
 
     if(bytes <= cfg::heap_manager::SMALL_OBJECT_THRESHOLD){
         start_idx = 0;
@@ -191,18 +194,22 @@ int heap_manager::find_suitable_segment(uint32_t bytes) noexcept {
         last_segment_idx = &last_large_segment;
     }
 
-    const size_t segment_count = end_idx - start_idx;
-    size_t last_used = last_segment_idx->load(std::memory_order_acquire); 
-    size_t start_offset = (last_used >= start_idx && last_used < end_idx) ? (last_used - start_idx) : 0;
+    const size_t segment_count{ end_idx - start_idx };
+    size_t last_used{ last_segment_idx->load(std::memory_order_acquire) }; 
+    size_t start_offset{ 
+        (last_used >= start_idx && last_used < end_idx) 
+            ? (last_used - start_idx) 
+            : 0 
+    };
 
-    for(size_t offset = 0; offset < segment_count; ++offset){
-        size_t relative_idx = (start_offset + offset + 1) % segment_count;
-        size_t idx = start_idx + relative_idx;
+    for(size_t offset{0}; offset < segment_count; ++offset){
+        size_t relative_idx{ (start_offset + offset + 1) % segment_count };
+        size_t idx{ start_idx + relative_idx };
 
-        const segment_info* seg_info = free_memory_table.get_segment_info(idx);
+        const segment_info* seg_info{ free_memory_table.get_segment_info(idx) };
         if(!seg_info) continue;
 
-        const uint32_t free_bytes = seg_info->free_bytes.load(std::memory_order_acquire);
+        const uint32_t free_bytes{ seg_info->free_bytes.load(std::memory_order_acquire) };
         if(free_bytes < bytes + sizeof(header)) continue;
         
         if(fallback_segment_idx == -1 || fallback_segment_size < free_bytes){
@@ -225,13 +232,13 @@ int heap_manager::find_suitable_segment(uint32_t bytes) noexcept {
 }
 
 header* heap_manager::allocate_from_segment(size_t segment_index, uint32_t bytes){
-    segment_info* seg_info = free_memory_table.get_segment_info(segment_index);
+    segment_info* seg_info{ free_memory_table.get_segment_info(segment_index) };
     if(!seg_info || !seg_info->free_list_head){
         return nullptr;
     }
 
-    header* current = seg_info->free_list_head;
-    header* prev = nullptr;
+    header* current{ seg_info->free_list_head };
+    header* prev{nullptr};
 
     while(current){
         if(current->size >= bytes){
@@ -245,11 +252,13 @@ header* heap_manager::allocate_from_segment(size_t segment_index, uint32_t bytes
         return nullptr;
     }
 
-    uint32_t remaining = current->size - bytes;
+    uint32_t remaining{ current->size - bytes };
     if(remaining >= static_cast<uint32_t>(sizeof(header)) + cfg::heap::SEGMENT_ALIGNMENT){
-        header* new_header = reinterpret_cast<header*>(
-            reinterpret_cast<uint8_t*>(current) + sizeof(header) + static_cast<size_t>(bytes)
-        );
+        auto* new_header{ 
+            reinterpret_cast<header*>(
+                reinterpret_cast<uint8_t*>(current) + sizeof(header) + static_cast<size_t>(bytes)
+            )
+        };
         
         new_header->size = remaining - static_cast<uint32_t>(sizeof(header));
         new_header->next = current->next;

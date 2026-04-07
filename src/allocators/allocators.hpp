@@ -61,7 +61,7 @@ private:
     */
     template <typename fn>
     void enqueue_simulation(fn&& simulate, std::latch& completion_latch){
-        alloc_thread_pool.enqueue([simulate = std::forward<fn>(simulate), &completion_latch]{
+        alloc_thread_pool.enqueue([simulate=std::forward<fn>(simulate), &completion_latch]{
             simulate();
             completion_latch.count_down();
         });

@@ -15,10 +15,10 @@ namespace cfg::structs {
     */
     namespace hash_map {
         /// default number of buckets in a hash map.
-        constexpr size_t DEFAULT_MAP_CAPACITY = 8;
+        constexpr size_t DEFAULT_MAP_CAPACITY{8};
 
         /// max load factor for resizing of the hash map.
-        constexpr double MAX_LOAD_FACTOR = 0.75;
+        constexpr double MAX_LOAD_FACTOR{0.75};
     };
 
     /**
@@ -27,12 +27,12 @@ namespace cfg::structs {
     */
     namespace indexed_stack {
         /// default capacity of the indexed stack.
-        constexpr size_t DEFAULT_STACK_CAPACITY = 8;
+        constexpr size_t DEFAULT_STACK_CAPACITY{8};
     };
 
     namespace fixed_stack {
-
-        constexpr size_t MAX_STACK_CAPACITY = 256;
+        /// maximum capcity of the fixed stack.
+        constexpr size_t MAX_STACK_CAPACITY{256};
     };
 
 };
@@ -40,5 +40,6 @@ namespace cfg::structs {
 // data structure assertions.
 static_assert(cfg::structs::hash_map::DEFAULT_MAP_CAPACITY > 0, "Default map capacity must be positive");
 static_assert(cfg::structs::indexed_stack::DEFAULT_STACK_CAPACITY > 0, "Default stack capacity must be positive");
+static_assert(cfg::structs::fixed_stack::MAX_STACK_CAPACITY > 0, "Max fixed stack capacity must be positive");
 
 #endif

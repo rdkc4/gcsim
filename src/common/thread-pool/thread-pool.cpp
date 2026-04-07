@@ -11,13 +11,13 @@ thread_pool::thread_pool(size_t thread_count) : stop(false), threads(nullptr), t
         ::operator new(sizeof(std::thread) * thread_count)
     );
 
-    size_t i = 0;
+    size_t i{0};
     try {
         for (; i < thread_count; ++i) {
             new (threads + i) std::thread([this] -> void { worker(); });
         }
     } catch (...) {
-        for (size_t j = 0; j < i; ++j) {
+        for (size_t j{0}; j < i; ++j) {
             threads[j].join();
             threads[j].~thread();
         }
@@ -33,7 +33,7 @@ thread_pool::~thread_pool() {
     }
     cv.notify_all();
 
-    for (size_t i = 0; i < thread_count; ++i) {
+    for (size_t i{0}; i < thread_count; ++i) {
         if (threads[i].joinable()) {
             threads[i].join();
         }

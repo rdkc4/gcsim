@@ -47,7 +47,7 @@ void diagnoser::report_avg(std::ostream& out) const noexcept {
         total_duration += diagnostic_record.duration.count();
     }
 
-    const size_t count = diagnostic_records.get_size();
+    const size_t count{ diagnostic_records.get_size() };
 
     size_t avg_allocs = total_allocs / count;
     size_t avg_failed_allocs = total_failed_allocs / count;
