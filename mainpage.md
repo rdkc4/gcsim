@@ -19,18 +19,20 @@ Heap manager simulator using mark-sweep and mark-compact garbage collectors, wri
     cd gcsim
     ```
 2. Build the project:
-    - -O1 optimization with debugging flags
-        ```bash
-        make [-j$(nproc)]
-        ```
-    - -O2 optimization, no debugging flags
-        ```bash
-        make perf [-j$(nproc)]
-        ```
-    - -O3 optimization, no debugging flags
-        ```bash
-        make benchmark [-j$(nproc)]
-        ```
+- **-O1 optimization with debugging flags**
+```bash
+make [-j$(nproc)]
+```
+
+- **-O2 optimization, no debugging flags**
+```bash
+make perf [-j$(nproc)]
+```
+
+- **-O3 optimization, no debugging flags**
+```bash
+make benchmark [-j$(nproc)]
+```
 
 #### Usage
 To run a simulation:
@@ -39,12 +41,12 @@ To run a simulation:
 ```
 
 Options:
-- -gc, --garbage-collector : type of the garbage collector: mc, ms (mc - mark-compact, ms - mark-sweep)
-- -i, --iterations         : number of simulation iterations, positive number
-- -m, --mode               : simulation mode: stress, relaxed
-- -M, --mutators           : number of concurrent mutators min 1, max 10
-- -o, --output             : output file for simulation results
-- -h, --help               : display this help text
+- `-gc`, `--garbage-collector` : type of the garbage collector: mc, ms (mc - mark-compact, ms - mark-sweep)
+- `-i`, `--iterations`         : number of simulation iterations, positive number
+- `-m`, `--mode`               : simulation mode: stress, relaxed
+- `-M`, `--mutators`           : number of concurrent mutators min 1, max 10
+- `-o`, `--output`             : output file for simulation results
+- `-h`, `--help`               : display this help text
 
 #### Unit Tests
 Running the tests:

@@ -22,7 +22,7 @@ namespace cfg::structs {
     };
 
     /**
-     * @namespace cfg::structs::idx_stack
+     * @namespace cfg::structs::indexed_stack
      * @brief module defining constants related to hash map.
     */
     namespace indexed_stack {
