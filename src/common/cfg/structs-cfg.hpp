@@ -10,7 +10,7 @@
 namespace cfg::structs {
 
     /**
-     * @namespace cfg::structs::hmap
+     * @namespace cfg::structs::hash_map
      * @brief module defining constants related to hash map.
     */
     namespace hash_map {
@@ -23,13 +23,17 @@ namespace cfg::structs {
 
     /**
      * @namespace cfg::structs::indexed_stack
-     * @brief module defining constants related to hash map.
+     * @brief module defining constants related to indexed stack.
     */
     namespace indexed_stack {
         /// default capacity of the indexed stack.
         constexpr size_t DEFAULT_STACK_CAPACITY{8};
     };
 
+    /**
+     * @namepsace cfg::structs::fixed_stack
+     * @brief module defining constants related to fixed stack.
+    */
     namespace fixed_stack {
         /// maximum capcity of the fixed stack.
         constexpr size_t MAX_STACK_CAPACITY{256};
