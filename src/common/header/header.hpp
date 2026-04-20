@@ -24,7 +24,7 @@ struct header {
     /// size - the amount of memory the current block occupies.
     uint32_t size;
 
-    /// flags - 0x000000mf; m - marked (0/1), f - free (0/1).
+    /// `flags - 0x000000mf`: m - marked bit, f - free bit
     std::atomic<uint32_t> flags; //< 32b only because of the alignment.
 
     /**
@@ -48,16 +48,18 @@ struct header {
     /** 
      * @brief sets the is_free flag.
      * @param free - value for the is_free flag.
-     * @example free==true, flags = 0x00000000 => flags = 0x00000000 | 0x01 (0x00000001) => flags = 0x01.
-     * @example free==false, flags = 0x00000001 => flags = 0x00000001 & ~0x01 (0x11111110) => flags = 0x00.
+     * @par bitwise logic:
+     * - if `free == true`: `flags | 0x01` (sets free bit)
+     * - if `free == false`: `flags & ~0x01` (clears free bit)
     */
     void set_free(bool free) noexcept;
 
     /** 
      * @brief sets the is_marked flag.
      * @param marked - value for the is_marked flag.
-     * @example marked==true, flags = 0x00000000 => flags = 0x00000000 | 0x02 (0x00000010) => flags = 0x02.
-     * @example marked==false, flags = 0x00000010 => flags = 0x00000010 & ~0x02 (0x11111101) => flags = 0x00.
+     * @par bitwise logic:
+     * - if `marked == true`: `flags | 0x02` (sets marked bit)
+     * - if `marked == false`: `flags & ~0x02` (clears marked bit)
     */
     void set_marked(bool marked) noexcept;
 

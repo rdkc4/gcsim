@@ -6,7 +6,7 @@
 #include <memory>
 
 #include "../common/rng/rng-sim.hpp"
-#include "../common/core/identity/identity.hpp"
+#include "../common/core/identity.hpp"
 #include "../root-set-table/root-guard.hpp"
 #include "mutator-guard.hpp"
 
