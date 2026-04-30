@@ -14,18 +14,33 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v5
 
-      - name: Install dependencies
+      - name: Install clang 21
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang make libgtest-dev cmake
+          sudo apt-get install -y wget gnupg lsb-release cmake make
 
-          cd /usr/src/gtest
-          sudo cmake -B build
-          sudo cmake --build build
-          sudo cp build/lib/*.a /usr/lib
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 21
+
+          clang++-21 --version
+
+      - name: Build GoogleTest
+        run: |
+          git clone https://github.com/google/googletest.git
+          cd googletest
+
+          cmake -B build -DCMAKE_CXX_COMPILER=clang++-21
+          cmake --build build -j$(nproc)
+
+          sudo cmake --install build
 
       - name: Build simulator
-        run: make -j$(nproc)
+        run: |
+          make -j$(nproc) \
+            CXX=clang++-21
 
-      - name: Build and run tests
-        run: make test
+      - name: Run tests
+        run: |
+          make test -j$(nproc) \
+            CXX=clang++-21

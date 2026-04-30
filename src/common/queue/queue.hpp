@@ -17,13 +17,13 @@
 template<typename T>
 class queue {
 private:
-    using queue_entry = queue_entry<T>;
+    using q_entry = queue_entry<T>;
 
     /// pointer to the front of the queue.
-    queue_entry* head;
+    q_entry* head;
 
     /// pointer to the back of the queue.
-    queue_entry* tail;
+    q_entry* tail;
     
     /// size of the queue.
     size_t size;
@@ -80,11 +80,11 @@ public:
     template<typename TT>
     requires std::is_constructible_v<T, TT&&>
     void push(TT&& value){
-        queue_entry* new_element{ 
-            static_cast<queue_entry*>(::operator new(sizeof(queue_entry))) 
+        q_entry* new_element{ 
+            static_cast<q_entry*>(::operator new(sizeof(q_entry))) 
         };
         try {
-            new (new_element) queue_entry(std::forward<TT>(value));
+            new (new_element) q_entry(std::forward<TT>(value));
         } catch (...) {
             ::operator delete(new_element);
             throw;
@@ -110,7 +110,7 @@ public:
             throw std::out_of_range("Queue is empty");
         }
 
-        queue_entry* old_head{ head };
+        q_entry* old_head{ head };
         T value = std::move(old_head->value);
         
         head = head->next;
@@ -118,7 +118,7 @@ public:
             tail = nullptr;
         }
 
-        old_head->~queue_entry();
+        old_head->~q_entry();
         ::operator delete(old_head);
 
         --size;
@@ -170,9 +170,9 @@ public:
     */
     void clear() {
         while (head) {
-            queue_entry* tmp{ head };
+            q_entry* tmp{ head };
             head = head->next;
-            tmp->~queue_entry();
+            tmp->~q_entry();
             ::operator delete(tmp);
         }
         tail = nullptr;
