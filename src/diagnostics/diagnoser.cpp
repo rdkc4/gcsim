@@ -37,9 +37,9 @@ void diagnoser::report_avg(std::ostream& out) const noexcept {
         return;
     }
 
-    __int128 total_allocs{0};
-    __int128 total_failed_allocs{0};
-    __int128 total_duration{0};
+    __extension__ __int128 total_allocs{0};
+    __extension__ __int128 total_failed_allocs{0};
+    __extension__ __int128 total_duration{0};
 
     for(const auto& diagnostic_record : diagnostic_records){
         total_allocs += diagnostic_record.allocs;

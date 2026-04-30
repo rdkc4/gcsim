@@ -252,7 +252,11 @@ void mc_garbage_collector::compact_segment(segment& seg, segment_info* seg_info)
         if(hdr->forwarding_address) {
             header* dest{ hdr->forwarding_address };
             if(dest != hdr){
-                std::memmove(dest, hdr, object_size);
+                std::memmove(
+                    static_cast<void*>(dest), 
+                    static_cast<void*>(hdr), 
+                    object_size
+                );
             }
             dest->forwarding_address = nullptr;
             dest->set_marked(false);
