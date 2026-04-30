@@ -25,7 +25,7 @@ jobs:
           sudo cp build/lib/*.a /usr/lib
 
       - name: Build simulator
-        run: make -j$(nproc)
+        run: make -j$(nproc) CXX=clang++-18
 
       - name: Build and run tests
-        run: make test
+        run: make test -j$(nproc) CXX=clang++-18
