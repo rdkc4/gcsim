@@ -51,6 +51,18 @@ public:
     */
     ~thread_pool();
 
+    /// deleted copy constructor.
+    thread_pool(const thread_pool&) = delete;
+
+    /// deleted copy assignment operator.
+    thread_pool& operator=(const thread_pool&) = delete;
+
+    /// deleted move constructor.
+    thread_pool(thread_pool&&) noexcept = delete;
+
+    /// deleted move assignment operator.
+    thread_pool operator=(thread_pool&&) noexcept = delete;
+
     /** 
      * @brief adding new task to the queue
      * @param f - task that is being added to queue.

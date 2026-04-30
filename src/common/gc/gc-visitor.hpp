@@ -12,9 +12,26 @@ class shared_register_space;
 class gc_visitor {
 public:
     /**
-     * @brief deletes the gc_visitor object
+     * @brief creates the instance of gc_visitor object.
+    */
+    gc_visitor() = default;
+
+    /**
+     * @brief deletes the gc_visitor object.
     */
     virtual ~gc_visitor() = default;
+
+    /// deleted copy constructor.
+    gc_visitor(const gc_visitor&) = delete;
+
+    /// deleted copy assignment operator.
+    gc_visitor& operator=(const gc_visitor&) = delete;
+
+    /// deleted move constructor.
+    gc_visitor(gc_visitor&&) noexcept = delete;
+
+    /// deleted move assignment operator.
+    gc_visitor& operator=(gc_visitor&&) noexcept = delete;
     
     /**
      * @brief virtual function for marking elements of the thread local stack.

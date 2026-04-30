@@ -114,11 +114,6 @@ public:
     allocators(heap_manager& heap_manager_ref, size_t thread_count);
 
     /**
-     * @brief deletes the instance of the allocators.
-    */
-    ~allocators() = default;
-
-    /**
      * @brief starts the allocation simulation, stress mode.
      * @param tls_count - number of threads that are allocating objects.
      * @param mode - mode of the simulation.

@@ -17,7 +17,7 @@
 class diagnoser {
 private:
     /// simulation options.
-    cli::cli_options& options;
+    const cli::cli_options& options;
 
     /// stack of diagnostic records.
     indexed_stack<diagnostics> diagnostic_records;
@@ -45,7 +45,6 @@ private:
             case garbage_collector_type::mark_sweep: return "mark-sweep";
             case garbage_collector_type::mark_compact: return "mark-compact";
         }
-
         std::unreachable();
     }
 
@@ -54,12 +53,7 @@ public:
      * @brief creates the instance of the diagnoser.
      * @param options - simulation options.
     */
-    diagnoser(cli::cli_options& options);
-
-    /**
-     * @brief deletes the instance of the diagnoser.
-    */
-    ~diagnoser() = default;
+    diagnoser(const cli::cli_options& options);
 
     /**
      * @brief creates new diagnostic record.

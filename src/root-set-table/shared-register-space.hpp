@@ -40,6 +40,18 @@ public:
      * @brief deletes the instance of the shared register space.
     */
     ~shared_register_space();
+
+    /// deleted copy constructor.
+    shared_register_space(const shared_register_space&) = delete;
+
+    /// deleted copy assignment operator.
+    shared_register_space& operator=(const shared_register_space&) = delete;
+
+    /// deleted move constructor.
+    shared_register_space(shared_register_space&&) noexcept = delete;
+
+    /// deleted move assignment operator.
+    shared_register_space& operator=(shared_register_space&&) noexcept = delete;
     
     /**
      * @brief updates the value of the register at the random index.

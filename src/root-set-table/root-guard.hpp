@@ -46,6 +46,12 @@ public:
     /// deleted assignment operator.
     root_guard& operator=(const root_guard&) = delete;
 
+    /// deleted move constructor.
+    root_guard(root_guard&&) noexcept = delete;
+
+    /// deleted move assignment operator.
+    root_guard& operator=(root_guard&&) noexcept = delete;
+
     /**
      * @brief getter for the slot of the temporary root.
      * @returns slot where root is stored.

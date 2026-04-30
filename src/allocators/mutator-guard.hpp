@@ -28,6 +28,18 @@ public:
         hm.unregister_mutator();
     }
 
+    /// deleted copy constructor.
+    mutator_guard(const mutator_guard&) = delete;
+
+    /// deleted copy assignment operator.
+    mutator_guard& operator=(const mutator_guard&) = delete;
+
+    /// deleted move constructor.
+    mutator_guard(mutator_guard&&) noexcept = delete;
+
+    /// deleted move assignment operator.
+    mutator_guard& operator=(mutator_guard&&) noexcept = delete;
+
 };
 
 #endif

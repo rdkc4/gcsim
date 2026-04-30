@@ -30,7 +30,7 @@ struct segment {
     /// deleted copy constructor.
     segment(const segment&) = delete;
 
-    /// deleted assignment operator.
+    /// deleted copy assignment operator.
     segment& operator=(const segment&) = delete;
 
     /**

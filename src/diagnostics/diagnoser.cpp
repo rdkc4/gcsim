@@ -5,7 +5,7 @@
 
 #include "diagnostics.hpp"
 
-diagnoser::diagnoser(cli::cli_options& options) : options{ options} {
+diagnoser::diagnoser(const cli::cli_options& options) : options{ options} {
     std::cout << "====================Simulation Environment====================\n";
     std::cout << "Number of mutators      : " << options.mutators << "\n";
     std::cout << "Number of iterations    : " << options.iterations << "\n";

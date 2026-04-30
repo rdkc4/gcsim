@@ -12,9 +12,26 @@ class shared_register_space;
 class gc_forwarder {
 public:
     /**
+     * @brief creates the instance of the gc_forwarder object.
+    */
+    gc_forwarder() = default;
+
+    /**
      * @brief deletes the gc_forwarder object
     */
     virtual ~gc_forwarder() = default;
+
+    /// deleted copy constructor.
+    gc_forwarder(const gc_forwarder&) = delete;
+
+    /// deleted copy assignment operator.
+    gc_forwarder& operator=(const gc_forwarder&) = delete;
+
+    /// deleted move constructor.
+    gc_forwarder(gc_forwarder&&) noexcept = delete;
+
+    /// deleted move assignment operator.
+    gc_forwarder& operator=(gc_forwarder&&) noexcept = delete;
 
     /**
      * @brief virtual function for forwarding elements of the thread local stack.

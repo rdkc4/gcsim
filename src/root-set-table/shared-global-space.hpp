@@ -49,6 +49,18 @@ public:
      * removes their identificator from heap manager's root_set_table.
     */
     ~shared_global_space();
+
+    /// deleted copy constructor.
+    shared_global_space(const shared_global_space&) = delete;
+
+    /// deleted copy assignment operator.
+    shared_global_space& operator=(const shared_global_space&) = delete;
+
+    /// deleted move constructor.
+    shared_global_space(shared_global_space&&) noexcept = delete;
+
+    /// deleted move assignment operator.
+    shared_global_space& operator=(shared_global_space&&) noexcept = delete;
     
     /**
      * @brief allocates new global variable.

@@ -1,6 +1,4 @@
-#include <exception>
-#include <format>
-#include <iostream>
+#include <expected>
 #include <utility>
 #include <memory>
 
@@ -18,41 +16,36 @@
  * ./gcsim [options]
  * 
  * Options:
- * -gc, --garbage-collector : type of the garbage collector: mc, ms (mc - mark-compact, ms - mark-sweep)
- * -i, --iterations         : number of simulation iterations, positive number
- * -m, --mode               : simulation mode: stress, relaxed
- * -M, --mutators           : number of concurrent mutators min 1, max 10
- * -o, --output             : output file for simulation results
- * -h, --help               : display this help text
+ * -gc, --garbage-collector  : type of the garbage collector: mc, ms (mc - mark-compact, ms - mark-sweep)
+ * -i,  --iterations         : number of simulation iterations, positive number
+ * -m,  --mode               : simulation mode: stress, relaxed
+ * -M,  --mutators           : number of concurrent mutators min 1, max 10
+ * -o,  --output             : output file for simulation results
+ * -h,  --help               : display this help text
 */
 int main(int argc, char** argv){
-    cli::cli_options options;
-    try {
-        options = cli::parse_args(argc, argv);
-    }
-    catch(std::exception& ex){
-        std::cerr << std::format(
-            "Failed to run heap manager simulation, try `./gcsim --help`\n\n{}", ex.what()
-        );
-        return 1;
-    }
+    auto result{ cli::parse_args(argc, argv)};
 
+    if(!result){
+        std::cerr << result.error() << '\n';
+        std::exit(1);
+    }
+    
+    const cli::cli_options options{ *result };
     if(options.help == true){
         cli::show_help();
-
-        if(argc == 2){
-            return 0;
-        }
+        return 0;
     }
 
     auto heap_mng{ 
         [&options]() -> std::unique_ptr<heap_manager> {
-            if (options.gc_type == garbage_collector_type::mark_sweep) {
+            if(options.gc_type == garbage_collector_type::mark_sweep){
                 return std::make_unique<heap_manager>(
                     std::in_place_type<ms_garbage_collector>,
                     cfg::threads::GC_THREAD_COUNT
                 );
-            } else {
+            }
+            else {
                 return std::make_unique<heap_manager>(
                     std::in_place_type<mc_garbage_collector>,
                     cfg::threads::GC_THREAD_COUNT

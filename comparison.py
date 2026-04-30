@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """!
 @brief runs GC simulations and generates performance plots.
 

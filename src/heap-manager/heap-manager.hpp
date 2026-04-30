@@ -140,10 +140,10 @@ public:
     heap_manager& operator=(const heap_manager&) = delete;
 
     /// deleted move constructor.
-    heap_manager(heap_manager&&) = delete;
+    heap_manager(heap_manager&&) noexcept = delete;
 
     /// deleted move assignment operator.
-    heap_manager& operator=(heap_manager&&) = delete;
+    heap_manager& operator=(heap_manager&&) noexcept = delete;
 
     /**
      * @brief tries to allocate memory on the heap.

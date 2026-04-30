@@ -28,6 +28,18 @@ public:
     */
     virtual ~garbage_collector() = default;
 
+    /// deleted copy constructor.
+    garbage_collector(const garbage_collector&) = delete;
+
+    /// deleted copy assignment operator.
+    garbage_collector& operator=(const garbage_collector&) = delete;
+
+    /// deleted move constructor.
+    garbage_collector(garbage_collector&&) noexcept = delete;
+
+    /// deleted move assignment operator.
+    garbage_collector& operator=(garbage_collector&&) noexcept = delete;
+
     /**
      * @brief collects the garbage from the heap.
      * @param root_set - reference to a root-set-table.

@@ -41,10 +41,10 @@ public:
     heap& operator=(const heap&) = delete;
 
     /// deleted move constructor.
-    heap(heap&&) = delete;
+    heap(heap&&) noexcept = delete;
 
     /// deleted move assignment operator.
-    heap& operator=(heap&&) = delete;
+    heap& operator=(heap&&) noexcept = delete;
 
     /**
      * @brief getter for small object segments.

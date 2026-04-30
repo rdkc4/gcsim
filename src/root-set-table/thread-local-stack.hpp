@@ -86,10 +86,10 @@ public:
     thread_local_stack& operator=(const thread_local_stack&) = delete;
 
     /// deleted move constructor.
-    thread_local_stack(thread_local_stack&& other) = delete;
+    thread_local_stack(thread_local_stack&& other) noexcept = delete;
 
     /// deleted move assignment operator.
-    thread_local_stack& operator=(thread_local_stack&& other) = delete;
+    thread_local_stack& operator=(thread_local_stack&& other) noexcept = delete;
 
     /**
      * @brief initializes new variable.

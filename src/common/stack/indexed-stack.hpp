@@ -96,7 +96,7 @@ public:
     /// deleted copy constructor.
     indexed_stack(const indexed_stack&) = delete;
 
-    /// deleted assignment operator.
+    /// deleted copy assignment operator.
     indexed_stack& operator=(const indexed_stack&) = delete;
 
     /** 

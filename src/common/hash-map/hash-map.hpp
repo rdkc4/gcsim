@@ -158,7 +158,7 @@ public:
     /// deleted copy constructor.
     hash_map(const hash_map&) = delete;
 
-    /// deleted assignment operator.
+    /// deleted copy assignment operator.
     hash_map& operator=(const hash_map&) = delete;
 
     /**

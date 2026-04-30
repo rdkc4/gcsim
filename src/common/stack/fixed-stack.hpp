@@ -3,6 +3,8 @@
 
 #include <cstddef>
 #include <stdexcept>
+#include <utility>
+#include <type_traits>
 
 /**
  * @class fixed_stack
@@ -26,11 +28,45 @@ public:
     */
     fixed_stack() : top { 0 } {};
 
+    /**
+     * @brief deletes the instance of the fixed stack.
+    */
+    ~fixed_stack() = default;
+
     /// deleted copy constructor.
     fixed_stack(const fixed_stack&) = delete;
 
     /// deleted assignment operator.
     fixed_stack& operator=(const fixed_stack&) = delete;
+
+    /**
+     * @brief move consturctor.
+     * @param other - moved from fixed_stack.
+    */
+    fixed_stack(fixed_stack&& other) noexcept(std::is_nothrow_move_constructible_v<T>) 
+        : top{ other.top } {
+            for(size_t i{0}; i < top; ++i){
+                data[i] = std::move(other.data[i]);
+            }
+            other.top = 0;
+        }
+
+    /**
+     * @brief move assignment operator.
+     * @param other - moved from fixed_stack.
+    */
+    fixed_stack& operator=(fixed_stack&& other) noexcept(std::is_nothrow_move_assignable_v<T>){
+        if(this != &other){
+            for(size_t i{0}; i < other.top; ++i){
+                data[i] = std::move(other.data[i]);
+            }
+
+            top = other.top;
+            other.top = 0;
+        }
+
+        return *this;
+    }
 
     /**
      * @brief pushes an element on the stack.

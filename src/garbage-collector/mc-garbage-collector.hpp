@@ -91,11 +91,6 @@ public:
     mc_garbage_collector(size_t thread_count = 1);
 
     /**
-     * @brief deletes the instance of the mark-and-sweep garbage collector.
-    */
-    ~mc_garbage_collector() override final = default;
-
-    /**
      * @brief collects the garbage from the heap using mark-and-sweep algorithm.
      * @param root_set - reference to a root-set-table.
      * @param heap_memory - reference to a heap.

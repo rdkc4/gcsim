@@ -53,11 +53,6 @@ public:
     ms_garbage_collector(size_t thread_count = 1);
 
     /**
-     * @brief deletes the instance of the garbage collector.
-    */
-    ~ms_garbage_collector() override final = default;
-
-    /**
      * @brief collects the garbage from the heap.
      * @param root_set - reference to a root-set-table.
      * @param heap_memory - reference to a heap.

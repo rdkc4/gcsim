@@ -44,7 +44,8 @@ public:
 
     /// deleted copy constructor.
     queue(const queue&) = delete;
-    /// deleted assignment operator.
+
+    /// deleted copy assignment operator.
     queue& operator=(const queue&) = delete;
 
     /**
